@@ -40,7 +40,7 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="relative flex h-screen w-64 shrink-0 flex-col overflow-hidden bg-ink-950 text-ink-100">
+    <aside className="relative flex h-full w-64 shrink-0 flex-col overflow-hidden bg-ink-950 text-ink-100">
       <div className="pointer-events-none absolute inset-0 bg-ink-radial" />
 
       <div className="relative flex items-center gap-2.5 px-6 py-6">
