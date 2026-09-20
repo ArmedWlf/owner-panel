@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect } from 'react';
-import api from '../api/axios.config';
+import { requestOtp, verifyOtp } from '../api/auth.api';
 
 export const AuthContext = createContext();
 
@@ -16,12 +16,17 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = async (phoneNumber, password) => {
-    const res = await api.post('/auth/login', { phone_number: phoneNumber, password });
-    localStorage.setItem('token', res.data.token);
-    localStorage.setItem('user', JSON.stringify(res.data.user));
-    setUser(res.data.user);
-    return res.data;
+  const sendOtp = async (phoneNumber) => {
+    return requestOtp(phoneNumber); // { devOtpCode } در حالت توسعه
+  };
+
+  // profile فقط برای کاربر جدید لازم است؛ برای کاربر قدیمی نادیده گرفته می‌شود
+  const confirmOtp = async (phoneNumber, otpCode, profile) => {
+    const data = await verifyOtp({ phoneNumber, otpCode, profile });
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    setUser(data.user);
+    return data;
   };
 
   const logout = () => {
@@ -31,7 +36,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, sendOtp, confirmOtp, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

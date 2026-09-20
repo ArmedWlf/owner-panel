@@ -1,20 +1,103 @@
 const Joi = require('joi');
+const { Shipment } = require('../models');
+const commonMessages = require('../utils/joiMessages');
+
+// امروز به وقت محلی سرور، برای مقایسه با تاریخ بارگیری
+function startOfToday() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+// مقایسه‌ی صرفاً سطح «روز تقویمی» (بدون در نظر گرفتن ساعت/منطقه‌ی زمانی) تا مثلاً انتخاب «امروز» همیشه معتبر باشد
+function isTodayOrLater(value, helpers) {
+  const today = startOfToday();
+  const inputDate = new Date(value);
+  const inputDay = new Date(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate());
+  const todayDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  if (inputDay < todayDay) {
+    return helpers.message('تاریخ بارگیری نمی‌تواند در گذشته باشد.');
+  }
+  return value;
+}
 
 const createShipmentSchema = Joi.object({
-  origin_address: Joi.string().required().messages({ 'any.required': 'آدرس مبدأ الزامی است.' }),
-  origin_lat: Joi.number().required(),
-  origin_lng: Joi.number().required(),
-  dest_address: Joi.string().required().messages({ 'any.required': 'آدرس مقصد الزامی است.' }),
-  dest_lat: Joi.number().required(),
-  dest_lng: Joi.number().required(),
-  cargo_details: Joi.string().required().messages({ 'any.required': 'جزئیات محموله الزامی است.' }),
-  weight_kg: Joi.number().positive().required().messages({ 'number.positive': 'وزن باید عدد مثبت باشد.' }),
-  cargo_value: Joi.number().positive().required(),
-  receiver_name: Joi.string().required().messages({ 'any.required': 'نام گیرنده الزامی است.' }),
-  receiver_phone: Joi.string().pattern(/^09\d{9}$/).required().messages({ 'string.pattern.base': 'شماره موبایل گیرنده معتبر نیست.' }),
-  loading_time: Joi.date().required(),
-  total_price: Joi.number().positive().required(),
-  vehicle_type_id: Joi.number().integer().optional(),
-});
+  // مبدأ
+  origin_city_id: Joi.number().integer().required().label('شهر مبدأ'),
+  origin_zone_id: Joi.number().integer().optional().allow(null).label('محدوده مبدأ'),
+  origin_address: Joi.string().min(5).max(500).required().label('آدرس دقیق مبدأ'),
+  origin_lat: Joi.number().min(-90).max(90).required().label('عرض جغرافیایی مبدأ'),
+  origin_lng: Joi.number().min(-180).max(180).required().label('طول جغرافیایی مبدأ'),
 
-module.exports = { createShipmentSchema };
+  // مقصد
+  dest_city_id: Joi.number().integer().required().label('شهر مقصد'),
+  dest_zone_id: Joi.number().integer().optional().allow(null).label('محدوده مقصد'),
+  dest_address: Joi.string().min(5).max(500).required().label('آدرس دقیق مقصد'),
+  dest_lat: Joi.number().min(-90).max(90).required().label('عرض جغرافیایی مقصد'),
+  dest_lng: Joi.number().min(-180).max(180).required().label('طول جغرافیایی مقصد'),
+
+  // کالا
+  cargo_type: Joi.string()
+    .valid('general', 'fragile', 'perishable', 'construction', 'industrial', 'other')
+    .required()
+    .label('نوع کالا'),
+  cargo_type_other: Joi.string().max(150).allow('', null).label('توضیح نوع کالا').when('cargo_type', {
+    is: 'other',
+    then: Joi.string().min(2).required().messages({ 'any.required': 'در صورت انتخاب «سایر»، توضیح نوع کالا الزامی است.' }),
+  }),
+  packaging_type: Joi.string().max(100).allow('', null).label('نوع بسته‌بندی'),
+  weight_kg: Joi.number().positive().max(40000).required().label('وزن')
+    .messages({ 'number.max': 'وزن وارد شده بیشتر از حد مجاز (۴۰ تن) است؛ لطفاً بررسی کنید.' }),
+  length_cm: Joi.number().positive().max(2000).optional().allow(null).label('طول بار'),
+  width_cm: Joi.number().positive().max(2000).optional().allow(null).label('عرض بار'),
+  height_cm: Joi.number().positive().max(2000).optional().allow(null).label('ارتفاع بار'),
+
+  cargo_value: Joi.number().positive().max(1000000000000).required().label('ارزش اعلامی کالا'),
+  photo_urls: Joi.array().items(Joi.string()).max(5).optional().label('تصاویر کالا'),
+  notes: Joi.string().max(1000).allow('', null).label('توضیحات تکمیلی'),
+
+  // زمان و فوریت
+  loading_date: Joi.date().custom(isTodayOrLater).required().label('تاریخ بارگیری'),
+  loading_time_from: Joi.string().pattern(/^([01]\d|2[0-3]):[0-5]\d$/).required().label('ساعت شروع بارگیری'),
+  loading_time_to: Joi.string().pattern(/^([01]\d|2[0-3]):[0-5]\d$/).required().label('ساعت پایان بارگیری'),
+  urgency: Joi.string().valid(...Shipment.URGENCY_LEVELS).required().label('میزان فوریت'),
+
+  // خودرو و بارگیری/تخلیه
+  vehicle_type_id: Joi.number().integer().required().label('نوع خودرو'),
+  loading_method: Joi.string().valid(...Shipment.HANDLING_METHODS).required().label('نوع بارگیری'),
+  unloading_method: Joi.string().valid(...Shipment.HANDLING_METHODS).required().label('نوع تخلیه'),
+
+  // گیرنده
+  receiver_name: Joi.string().min(2).max(100).required().label('نام گیرنده'),
+  receiver_phone: Joi.string().pattern(/^09\d{9}$/).required().label('شماره تماس گیرنده')
+    .messages({ 'string.pattern.base': '{{#label}} باید به‌فرم ۰۹xxxxxxxxx باشد.' }),
+
+  // قیمت پیشنهادی صاحب کالا (نه قیمت نهایی)
+  proposed_price: Joi.number().positive().min(10000).required().label('کرایه پیشنهادی')
+    .messages({ 'number.min': 'کرایه پیشنهادی خیلی پایین به‌نظر می‌رسد؛ لطفاً بررسی کنید.' }),
+})
+  .custom((value, helpers) => {
+    if (value.loading_time_from >= value.loading_time_to) {
+      return helpers.message('ساعت پایان بارگیری باید بعد از ساعت شروع باشد.');
+    }
+    return value;
+  })
+  .messages(commonMessages);
+
+const respondPriceSchema = Joi.object({
+  action: Joi.string().valid('accept', 'reject').required().label('نوع پاسخ'),
+}).messages(commonMessages);
+
+const cancelShipmentSchema = Joi.object({
+  cancel_reason: Joi.string().min(5).max(500).required().label('دلیل لغو'),
+}).messages(commonMessages);
+
+const proposePriceSchema = Joi.object({
+  operator_price: Joi.number().positive().required().label('قیمت نهایی'),
+}).messages(commonMessages);
+
+const advanceStatusSchema = Joi.object({
+  status: Joi.string().valid('driver_assigned', 'at_pickup', 'in_transit', 'delivered').required().label('وضعیت'),
+}).messages(commonMessages);
+
+module.exports = { createShipmentSchema, respondPriceSchema, cancelShipmentSchema, proposePriceSchema, advanceStatusSchema };

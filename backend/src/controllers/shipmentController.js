@@ -1,44 +1,39 @@
-const { Shipment, VehicleType } = require('../models');
+const asyncHandler = require('../utils/asyncHandler');
+const { success } = require('../utils/apiResponse');
+const shipmentService = require('../services/shipment.service');
 
-// ثبت بار جدید
-exports.createShipment = async (req, res) => {
-  try {
-    const owner_id = req.user.id; // دریافت ID کاربر از توکن JWT
-    
-    // تولید کد پیگیری یکتا
-    const tracking_code = 'SHIP-' + Math.floor(100000 + Math.random() * 900000);
+const create = asyncHandler(async (req, res) => {
+  const { shipment, needsManualReview } = await shipmentService.createShipment(req.user.id, req.body);
+  success(res, {
+    statusCode: 201,
+    message: 'بار با موفقیت ثبت شد و در انتظار بررسی است.',
+    data: { shipment, needsManualReview },
+  });
+});
 
-    const shipmentData = {
-      ...req.body,
-      owner_id,
-      tracking_code,
-    };
+const getMine = asyncHandler(async (req, res) => {
+  const shipments = await shipmentService.getMyShipments(req.user.id, { status: req.query.status });
+  success(res, { data: shipments });
+});
 
-    const shipment = await Shipment.create(shipmentData);
+const getOne = asyncHandler(async (req, res) => {
+  const shipment = await shipmentService.getShipmentForOwner(req.user.id, req.params.id);
+  success(res, { data: shipment });
+});
 
-    return res.status(201).json({
-      message: 'بار با موفقیت ثبت شد.',
-      shipment,
-    });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'خطا در ثبت بار.' });
-  }
-};
+const respondToPrice = asyncHandler(async (req, res) => {
+  const shipment = await shipmentService.respondToPrice(req.user.id, req.params.id, req.body.action);
+  success(res, { message: 'پاسخ شما ثبت شد.', data: shipment });
+});
 
-// دریافت لیست بارهای صاحب کالا
-exports.getMyShipments = async (req, res) => {
-  try {
-    const owner_id = req.user.id;
-    const shipments = await Shipment.findAll({
-      where: { owner_id },
-      include: [{ model: VehicleType }],
-      order: [['createdAt', 'DESC']],
-    });
+const cancel = asyncHandler(async (req, res) => {
+  const shipment = await shipmentService.cancelShipment(req.user.id, req.params.id, req.body.cancel_reason);
+  success(res, { message: 'بار لغو شد.', data: shipment });
+});
 
-    return res.json(shipments);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'خطا در دریافت لیست بارها.' });
-  }
-};
+const confirmDelivery = asyncHandler(async (req, res) => {
+  const shipment = await shipmentService.confirmDelivery(req.user.id, req.params.id);
+  success(res, { message: 'تحویل بار تأیید شد.', data: shipment });
+});
+
+module.exports = { create, getMine, getOne, respondToPrice, cancel, confirmDelivery };

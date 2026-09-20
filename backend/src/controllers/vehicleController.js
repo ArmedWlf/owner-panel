@@ -1,11 +1,10 @@
+const asyncHandler = require('../utils/asyncHandler');
+const { success } = require('../utils/apiResponse');
 const { VehicleType } = require('../models');
 
-exports.getVehicleTypes = async (req, res) => {
-  try {
-    const vehicles = await VehicleType.findAll({ where: { is_active: true } });
-    return res.json(vehicles);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'خطا در دریافت لیست خودروها.' });
-  }
-};
+const getAll = asyncHandler(async (req, res) => {
+  const vehicles = await VehicleType.findAll({ where: { is_active: true }, order: [['max_weight_kg', 'ASC']] });
+  success(res, { data: vehicles });
+});
+
+module.exports = { getAll };

@@ -18,6 +18,7 @@
     "express": "^5.2.1",
     "joi": "^18.2.8",
     "jsonwebtoken": "^9.0.3",
+    "multer": "^1.4.5-lts.1",
     "mysql2": "^3.24.4",
     "sequelize": "^6.37.8"
   },

@@ -1,52 +1,201 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Phone, KeyRound, User, Building2, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import Input from '../../components/common/Input';
+import Button from '../../components/common/Button';
+import AuthShell from './AuthShell';
+import { getErrorMessage } from '../../utils/errorMessage';
+import { toEnglishDigits } from '../../utils/digits';
+
+const RESEND_COOLDOWN = 60;
 
 export default function Login() {
-  const [phoneNumber, setPhoneNumber] = useState('09123456789');
-  const [password, setPassword] = useState('mySecurePassword123');
+  const [step, setStep] = useState('phone'); // phone | otp | profile
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
+  const [profile, setProfile] = useState({ first_name: '', last_name: '', company_name: '' });
   const [error, setError] = useState('');
-  const { login } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+  const [devOtp, setDevOtp] = useState('');
+
+  const { sendOtp, confirmOtp } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
+
+  const handleSendOtp = async (e) => {
     e.preventDefault();
+    setError('');
+    setLoading(true);
     try {
-      await login(phoneNumber, password);
-      navigate('/create-shipment');
+      const result = await sendOtp(phone);
+      setStep('otp');
+      setCooldown(RESEND_COOLDOWN);
+      if (result?.devOtpCode) {
+        setDevOtp(result.devOtpCode);
+        setOtp(result.devOtpCode);
+      } else {
+        setDevOtp('');
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'خطا در ورود به سیستم');
+      setError(getErrorMessage(err, 'ارسال کد با خطا مواجه شد.'));
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleVerify = async (e, profileOverride) => {
+    e?.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      await confirmOtp(phone, otp, profileOverride || profile);
+      navigate('/dashboard');
+    } catch (err) {
+      if (err.response?.data?.code === 'PROFILE_REQUIRED') {
+        setStep('profile');
+      } else {
+        setError(getErrorMessage(err, 'کد وارد شده نادرست است.'));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const stepMeta = {
+    phone: {
+      title: 'خوش اومدی',
+      subtitle: 'شماره موبایلت رو وارد کن تا کد تأیید برات پیامک بشه.',
+    },
+    otp: {
+      title: 'کد تأیید رو وارد کن',
+      subtitle: `کد ۵ رقمی به شماره ${phone} پیامک شد.`,
+    },
+    profile: {
+      title: 'یه قدم تا شروع',
+      subtitle: 'برای اولین‌بار خوش اومدی! این چند تا فیلد رو هم پر کن.',
+    },
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4 dir-rtl">
-      <form onSubmit={handleSubmit} className="w-full max-w-md rounded-lg bg-white p-6 shadow-md">
-        <h2 className="mb-6 text-center text-2xl font-bold">ورود به پنل صاحب کالا</h2>
-        {error && <div className="mb-4 rounded bg-red-100 p-3 text-sm text-red-700">{error}</div>}
-        
-        <label className="mb-2 block text-sm font-medium">شماره موبایل:</label>
-        <input
-          type="text"
-          className="mb-4 w-full rounded border p-2"
-          value={phoneNumber}
-          onChange={(e) => setPhoneNumber(e.target.value)}
-          required
-        />
+    <AuthShell title={stepMeta[step].title} subtitle={stepMeta[step].subtitle}>
+      {error && (
+        <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
-        <label className="mb-2 block text-sm font-medium">رمز عبور:</label>
-        <input
-          type="password"
-          className="mb-6 w-full rounded border p-2"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+      {step === 'phone' && (
+        <motion.div key="phone" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.22 }}>
+        <form onSubmit={handleSendOtp} className="space-y-4">
+          <Input
+            label="شماره موبایل"
+            icon={Phone}
+            type="tel"
+            dir="ltr"
+            className="text-left tabular"
+            placeholder="0912xxxxxxx"
+            value={phone}
+            onChange={(e) => setPhone(toEnglishDigits(e.target.value).replace(/[^\d]/g, ''))}
+            autoFocus
+            required
+          />
+          <Button type="submit" variant="accent" size="lg" loading={loading} className="w-full">
+            دریافت کد تأیید
+          </Button>
+        </form>
+        </motion.div>
+      )}
 
-        <button type="submit" className="w-full rounded bg-blue-600 py-2 text-white hover:bg-blue-700">
-          ورود
-        </button>
-      </form>
-    </div>
+      {step === 'otp' && (
+        <motion.div key="otp" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.22 }}>
+        <form onSubmit={handleVerify} className="space-y-4">
+          {devOtp && (
+            <div className="rounded-lg border border-dashed border-amber-300 bg-amber-50 px-4 py-2.5 text-xs text-amber-700">
+              🛠️ حالت توسعه (بدون درگاه پیامک واقعی) — کد به‌صورت خودکار پر شد:{' '}
+              <span className="tabular font-bold">{devOtp}</span>
+            </div>
+          )}
+          <Input
+            label="کد تأیید"
+            icon={KeyRound}
+            dir="ltr"
+            className="tabular text-center text-lg tracking-[0.5em]"
+            maxLength={5}
+            value={otp}
+            onChange={(e) => setOtp(toEnglishDigits(e.target.value).replace(/[^\d]/g, ''))}
+            placeholder="•••••"
+            autoFocus
+            required
+          />
+          <Button type="submit" variant="accent" size="lg" loading={loading} className="w-full">
+            تأیید و ورود
+          </Button>
+          <div className="flex items-center justify-between text-xs text-ink-300">
+            <button
+              type="button"
+              onClick={() => setStep('phone')}
+              className="inline-flex items-center gap-1 hover:text-ink-700"
+            >
+              <ArrowLeft size={13} />
+              اصلاح شماره موبایل
+            </button>
+            <button
+              type="button"
+              disabled={cooldown > 0}
+              onClick={handleSendOtp}
+              className="tabular disabled:text-ink-200"
+            >
+              {cooldown > 0 ? `ارسال مجدد تا ${cooldown} ثانیه` : 'ارسال مجدد کد'}
+            </button>
+          </div>
+        </form>
+        </motion.div>
+      )}
+
+      {step === 'profile' && (
+        <motion.div key="profile" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.22 }}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleVerify(null, profile);
+          }}
+          className="space-y-4"
+        >
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="نام"
+              icon={User}
+              value={profile.first_name}
+              onChange={(e) => setProfile((p) => ({ ...p, first_name: e.target.value }))}
+              required
+            />
+            <Input
+              label="نام خانوادگی"
+              value={profile.last_name}
+              onChange={(e) => setProfile((p) => ({ ...p, last_name: e.target.value }))}
+              required
+            />
+          </div>
+          <Input
+            label="نام شرکت (اختیاری)"
+            icon={Building2}
+            value={profile.company_name}
+            onChange={(e) => setProfile((p) => ({ ...p, company_name: e.target.value }))}
+          />
+          <Button type="submit" variant="accent" size="lg" loading={loading} className="w-full">
+            تکمیل ثبت‌نام و ورود
+          </Button>
+        </form>
+        </motion.div>
+      )}
+    </AuthShell>
   );
 }

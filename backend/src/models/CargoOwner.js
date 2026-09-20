@@ -1,6 +1,7 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
 
+// پروفایل تکمیلی صاحب کالا (رابطه یک‌به‌یک با User)
 const CargoOwner = sequelize.define('CargoOwner', {
   id: {
     type: DataTypes.INTEGER,

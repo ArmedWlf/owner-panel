@@ -1,3 +1,49 @@
+@import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+html {
+  font-family: 'Vazirmatn', Tahoma, sans-serif;
+}
+
+body {
+  background-color: #EEF1F4;
+  color: #1F2A47;
+}
+
+/* اعداد (کد پیگیری، وزن، قیمت) با فونت مونو و ارقام هم‌عرض نمایش داده شوند */
+.tabular {
+  font-family: 'IBM Plex Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+::selection {
+  background-color: #F2A93B;
+  color: #101833;
+}
+
+/* استایل نقشه‌ی Leaflet هماهنگ با پوسته‌ی تیره‌ی برنامه */
+.leaflet-container {
+  font-family: 'Vazirmatn', Tahoma, sans-serif;
+  background: #EEF1F4;
+}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: #101833;
+  color: #fff;
+}
+.leaflet-control-attribution {
+  font-size: 10px;
+}
+
+/* افکت شیشه‌ای (glassmorphism) برای کارت‌های روی زمینه‌ی تیره */
+.glass-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(12px);
+}

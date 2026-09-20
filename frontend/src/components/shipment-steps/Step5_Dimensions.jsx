@@ -1,14 +1,35 @@
+import Input from '../common/Input';
+import StepHeader from './StepHeader';
+import { parseNumberInput } from '../../utils/digits';
+
 export default function Step5_Dimensions({ data, onChange }) {
   return (
-    <div className="space-y-4">
-      <h3 className="text-xl font-bold text-gray-800">۵. ابعاد و بسته‌بندی</h3>
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">توضیحات ابعاد یا نوع بسته‌بندی (اختیاری):</label>
-        <input
+    <div className="space-y-5">
+      <StepHeader title="ابعاد بار (اختیاری)" description="وارد کردن ابعاد به تطبیق دقیق‌تر خودروی مناسب کمک می‌کند." />
+      <div className="grid grid-cols-3 gap-3">
+        <Input
+          label="طول (cm)"
           type="text"
-          className="w-full rounded border p-2"
-          placeholder="مثلاً: پالت‌بندی شده، طول ۲ متر"
-          onChange={(e) => onChange('packing_details', e.target.value)}
+          inputMode="decimal"
+          className="tabular"
+          value={data.length_cm ?? ''}
+          onChange={(e) => onChange('length_cm', parseNumberInput(e.target.value))}
+        />
+        <Input
+          label="عرض (cm)"
+          type="text"
+          inputMode="decimal"
+          className="tabular"
+          value={data.width_cm ?? ''}
+          onChange={(e) => onChange('width_cm', parseNumberInput(e.target.value))}
+        />
+        <Input
+          label="ارتفاع (cm)"
+          type="text"
+          inputMode="decimal"
+          className="tabular"
+          value={data.height_cm ?? ''}
+          onChange={(e) => onChange('height_cm', parseNumberInput(e.target.value))}
         />
       </div>
     </div>

@@ -1,11 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const authRoutes = require('./authRoutes');
-const shipmentRoutes = require('./shipmentRoutes');
-const vehicleRoutes = require('./vehicleRoutes');
 
-router.use('/auth', authRoutes);
-router.use('/shipments', shipmentRoutes);
-router.use('/vehicles', vehicleRoutes);
+router.use('/auth', require('./authRoutes'));
+router.use('/shipments', require('./shipmentRoutes'));
+router.use('/vehicles', require('./vehicleRoutes'));
+router.use('/locations', require('./locationRoutes'));
+router.use('/notifications', require('./notificationRoutes'));
+router.use('/complaints', require('./complaintRoutes'));
+router.use('/ratings', require('./ratingRoutes'));
+router.use('/uploads', require('./uploadRoutes'));
+router.use('/operator', require('./operatorRoutes'));
 
 module.exports = router;

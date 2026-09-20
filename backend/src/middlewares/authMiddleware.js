@@ -1,20 +1,20 @@
 const jwt = require('jsonwebtoken');
 
-const authenticateToken = (req, res, next) => {
+const authenticate = (req, res, next) => {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // دریافت توکن از فرمت Bearer <TOKEN>
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer <TOKEN>
 
   if (!token) {
-    return res.status(401).json({ message: 'دسترسی غیرمجاز؛ لطفا ابتدا وارد شوید.' });
+    return res.status(401).json({ success: false, message: 'دسترسی غیرمجاز؛ لطفا ابتدا وارد شوید.' });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
-      return res.status(403).json({ message: 'توکن نامعتبر یا منقضی شده است.' });
+      return res.status(403).json({ success: false, message: 'توکن نامعتبر یا منقضی شده است.' });
     }
-    req.user = user;
+    req.user = decoded; // { id, role }
     next();
   });
 };
 
-module.exports = authenticateToken;
+module.exports = authenticate;
