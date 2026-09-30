@@ -1,23 +1,37 @@
-const { City, Zone } = require('../models');
+const { City, Zone } = require("../models");
+const iranCities = require("../data/iranCities.json");
 
-// چند شهر و محدوده‌ی نمونه برای شروع؛ در آینده از پنل مدیریت قابل مدیریت خواهد بود
-const LOCATIONS = {
-  'تهران': ['آزادی', 'ونک', 'تهرانپارس', 'جنوب شهر'],
-  'اصفهان': ['سی و سه پل', 'خیابان چهارباغ', 'شاهین‌شهر'],
-  'مشهد': ['حرم مطهر', 'وکیل‌آباد', 'الهیه'],
-  'شیراز': ['معالی‌آباد', 'زند', 'قصردشت'],
-  'تبریز': ['ولیعصر', 'آبرسان'],
-};
+const TEHRAN_ZONES = [
+  "مرکز، شمال و بافت متراکم",
+  "غرب و شمال غرب",
+  "غرب مرکزی و جنوب غرب صنعتی",
+  "شرق و شمال شرق",
+  "جنوب و جنوب شرق",
+];
 
 const seedLocations = async () => {
   const count = await City.count();
-  if (count > 0) return;
-
-  for (const [cityName, zones] of Object.entries(LOCATIONS)) {
-    const city = await City.create({ name: cityName });
-    await Zone.bulkCreate(zones.map((name) => ({ name, city_id: city.id })));
+  if (count === 0) {
+    // ۱. درج یکجای تمام ۱۴۸۱ شهر ایران
+    await City.bulkCreate(iranCities, { ignoreDuplicates: true });
+    console.log(`✅ ${iranCities.length} Iranian cities seeded successfully.`);
   }
-  console.log('✅ Default cities & zones added to database.');
+
+  // ۲. افزودن محدوده‌های اختصاصی تهران
+  const tehranCity = await City.findOne({
+    where: { name: "تهران", province: "تهران" },
+  });
+  if (tehranCity) {
+    const existingZonesCount = await Zone.count({
+      where: { city_id: tehranCity.id },
+    });
+    if (existingZonesCount === 0) {
+      await Zone.bulkCreate(
+        TEHRAN_ZONES.map((name) => ({ name, city_id: tehranCity.id })),
+      );
+      console.log("✅ Tehran special zones added.");
+    }
+  }
 };
 
 module.exports = seedLocations;

@@ -1,16 +1,23 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import { Search, MapPin, LocateFixed, Loader2 } from 'lucide-react';
+import { useEffect, useRef, useState, useCallback } from "react";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  useMapEvents,
+  useMap,
+} from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { Search, MapPin, LocateFixed, Loader2 } from "lucide-react";
 
 // آیکن پیش‌فرض Leaflet با باندلرهایی مثل Vite به‌درستی لود نمی‌شود؛
 // این یک راه‌حل شناخته‌شده است: آدرس آیکن‌ها را از CDN می‌دهیم
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
 const TEHRAN = { lat: 35.6997, lng: 51.338 };
@@ -19,7 +26,7 @@ const TEHRAN = { lat: 35.6997, lng: 51.338 };
 async function searchAddress(query) {
   if (!query || query.trim().length < 3) return [];
   const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-    query
+    query,
   )}&countrycodes=ir&limit=5&accept-language=fa`;
   const res = await fetch(url);
   if (!res.ok) return [];
@@ -46,13 +53,19 @@ function ClickHandler({ onPick }) {
 function FlyToOnChange({ position }) {
   const map = useMap();
   useEffect(() => {
-    if (position) map.flyTo([position.lat, position.lng], 15, { duration: 0.8 });
+    if (position)
+      map.flyTo([position.lat, position.lng], 15, { duration: 0.8 });
   }, [position?.lat, position?.lng]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }
 
-export default function LocationPicker({ lat, lng, onPick, placeholder = 'جست‌وجوی آدرس یا نام محل...' }) {
-  const [query, setQuery] = useState('');
+export default function LocationPicker({
+  lat,
+  lng,
+  onPick,
+  placeholder = "جست‌وجوی آدرس یا نام محل...",
+}) {
+  const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [locating, setLocating] = useState(false);
@@ -66,7 +79,7 @@ export default function LocationPicker({ lat, lng, onPick, placeholder = 'جست
       const address = await reverseGeocode(newLat, newLng);
       onPick(newLat, newLng, address);
     },
-    [onPick]
+    [onPick],
   );
 
   const handleQueryChange = (e) => {
@@ -100,16 +113,19 @@ export default function LocationPicker({ lat, lng, onPick, placeholder = 'جست
         setLocating(false);
       },
       () => setLocating(false),
-      { timeout: 8000 }
+      { timeout: 8000 },
     );
   };
 
   return (
-    <div className="overflow-hidden rounded-xl border border-ink-100">
+    <div className="relative z-0 overflow-hidden rounded-xl border border-ink-100">
       <div className="relative border-b border-ink-100 bg-white p-2">
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
-            <Search size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-300" />
+            <Search
+              size={15}
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-300"
+            />
             <input
               value={query}
               onChange={handleQueryChange}
@@ -117,7 +133,10 @@ export default function LocationPicker({ lat, lng, onPick, placeholder = 'جست
               className="w-full rounded-lg border border-ink-100 bg-route-bg py-2 pr-9 pl-3 text-sm text-ink-900 placeholder:text-ink-300 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
             />
             {searching && (
-              <Loader2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 animate-spin text-ink-300" />
+              <Loader2
+                size={14}
+                className="absolute left-3 top-1/2 -translate-y-1/2 animate-spin text-ink-300"
+              />
             )}
           </div>
           <button
@@ -126,7 +145,11 @@ export default function LocationPicker({ lat, lng, onPick, placeholder = 'جست
             title="موقعیت فعلی من"
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-ink-100 text-ink-500 transition-colors hover:border-amber-400 hover:text-amber-600"
           >
-            {locating ? <Loader2 size={16} className="animate-spin" /> : <LocateFixed size={16} />}
+            {locating ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <LocateFixed size={16} />
+            )}
           </button>
         </div>
 
@@ -139,7 +162,10 @@ export default function LocationPicker({ lat, lng, onPick, placeholder = 'جست
                   onClick={() => handleSelectResult(r)}
                   className="flex w-full items-start gap-2 px-3 py-2.5 text-right text-xs text-ink-600 transition-colors hover:bg-amber-50"
                 >
-                  <MapPin size={14} className="mt-0.5 shrink-0 text-amber-500" />
+                  <MapPin
+                    size={14}
+                    className="mt-0.5 shrink-0 text-amber-500"
+                  />
                   <span className="leading-5">{r.display_name}</span>
                 </button>
               </li>
@@ -152,7 +178,7 @@ export default function LocationPicker({ lat, lng, onPick, placeholder = 'جست
         <MapContainer
           center={position || TEHRAN}
           zoom={position ? 15 : 11}
-          style={{ height: '100%', width: '100%' }}
+          style={{ height: "100%", width: "100%" }}
           scrollWheelZoom
         >
           <TileLayer
@@ -178,7 +204,8 @@ export default function LocationPicker({ lat, lng, onPick, placeholder = 'جست
 
       <p className="flex items-center gap-1.5 border-t border-ink-100 bg-route-bg px-3 py-2 text-[11px] text-ink-300">
         <MapPin size={12} />
-        روی نقشه کلیک کن یا نشانگر را جابه‌جا کن؛ آدرس به‌صورت خودکار پیدا می‌شود.
+        روی نقشه کلیک کن یا نشانگر را جابه‌جا کن؛ آدرس به‌صورت خودکار پیدا
+        می‌شود.
       </p>
     </div>
   );
