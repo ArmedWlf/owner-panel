@@ -18,15 +18,14 @@ const TEHRAN_ZONES = [
 export default function Step2_Destination({ data, onChange }) {
   const [cities, setCities] = useState([]);
   const [zones, setZones] = useState([]);
-
   useEffect(() => {
     getCities()
       .then((apiCities) => {
         if (apiCities && apiCities.length > 0) {
-          const merged = [...apiCities];
-          const existingIds = new Set(apiCities.map((c) => c.id));
-          IRAN_CITIES.forEach((c) => {
-            if (!existingIds.has(c.id)) merged.push(c);
+          const apiCityMap = new Map(apiCities.map((c) => [c.name?.trim(), c]));
+          const merged = IRAN_CITIES.map((c) => {
+            const dbMatch = apiCityMap.get(c.name?.trim());
+            return dbMatch ? { ...c, id: dbMatch.id } : c;
           });
           setCities(merged);
         } else {
@@ -35,7 +34,6 @@ export default function Step2_Destination({ data, onChange }) {
       })
       .catch(() => setCities(IRAN_CITIES));
   }, []);
-
   const selectedCity = useMemo(() => {
     return cities.find((c) => c.id === Number(data.dest_city_id));
   }, [cities, data.dest_city_id]);

@@ -10233,4 +10233,4 @@ export const IRAN_CITIES = [
     displayName: "یکه سعود — استان خراسان شمالی",
     isDuplicateName: false,
   },
-];
+]

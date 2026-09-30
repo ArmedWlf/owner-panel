@@ -24,11 +24,11 @@ export default function Step1_Origin({ data, onChange }) {
     getCities()
       .then((apiCities) => {
         if (apiCities && apiCities.length > 0) {
-          // ادغام دیتابیس با دیتای کامل جهت پوشش استان‌ها و شهرهای تکمیلی
-          const merged = [...apiCities];
-          const existingIds = new Set(apiCities.map((c) => c.id));
-          IRAN_CITIES.forEach((c) => {
-            if (!existingIds.has(c.id)) merged.push(c);
+          // نگاشت ۵ شهر اولیه دیتابیس به نسخه کامل آن‌ها در IRAN_CITIES
+          const apiCityMap = new Map(apiCities.map((c) => [c.name?.trim(), c]));
+          const merged = IRAN_CITIES.map((c) => {
+            const dbMatch = apiCityMap.get(c.name?.trim());
+            return dbMatch ? { ...c, id: dbMatch.id } : c;
           });
           setCities(merged);
         } else {
@@ -37,7 +37,6 @@ export default function Step1_Origin({ data, onChange }) {
       })
       .catch(() => setCities(IRAN_CITIES));
   }, []);
-
   const selectedCity = useMemo(() => {
     return cities.find((c) => c.id === Number(data.origin_city_id));
   }, [cities, data.origin_city_id]);
