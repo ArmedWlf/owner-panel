@@ -80,6 +80,7 @@ const Shipment = sequelize.define(
 
     // مرحله ۸: نوع خودرو
     vehicle_type_id: { type: DataTypes.INTEGER, allowNull: false },
+    vehicle_variant: { type: DataTypes.STRING(50), allowNull: true },
 
     // مرحله ۱۰ و ۱۱: نوع بارگیری/تخلیه
     loading_method: {
