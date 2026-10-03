@@ -48,7 +48,7 @@ export default function Step9_Vehicle({ data, onChange }) {
 
   return (
     <div className="space-y-5">
-      <StepHeader title="انتخاب خودرو" description="بر اساس وزن و ابعاد بار وارد شده، خودروهای مناسب را پیشنهاد می‌دهیم." />
+      <StepHeader title="انتخاب نوع ناوگان" description="بر اساس وزن و ابعاد بار وارد شده، خودروهای مناسب را پیشنهاد می‌دهیم." />
 
       {loading ? (
         <p className="text-sm text-ink-300">در حال دریافت فهرست خودروها...</p>
