@@ -1,6 +1,7 @@
 const Joi = require("joi");
 const { Shipment } = require("../models");
 const commonMessages = require("../utils/joiMessages");
+const CARGO_TYPES = require("../../../shared/cargoTypes.json");
 
 // امروز به وقت محلی سرور، برای مقایسه با تاریخ بارگیری
 function startOfToday() {
@@ -60,28 +61,29 @@ const createShipmentSchema = Joi.object({
     .optional()
     .allow(null)
     .label("محدوده مقصد"),
-  dest_address: Joi.string().min(5).max(500).required().label("آدرس دقیق مقصد"),
+  dest_address: Joi.string()
+    .min(5)
+    .max(500)
+    .optional()
+    .allow("", null)
+    .label("آدرس دقیق مقصد"),
   dest_lat: Joi.number()
     .min(-90)
     .max(90)
-    .required()
+    .optional()
+    .allow(null)
     .label("عرض جغرافیایی مقصد"),
+
   dest_lng: Joi.number()
     .min(-180)
     .max(180)
-    .required()
+    .optional()
+    .allow(null)
     .label("طول جغرافیایی مقصد"),
 
   // کالا
   cargo_type: Joi.string()
-    .valid(
-      "general",
-      "fragile",
-      "perishable",
-      "construction",
-      "industrial",
-      "other",
-    )
+    .valid(...CARGO_TYPES, "other")
     .required()
     .label("نوع کالا"),
   cargo_type_other: Joi.string()
@@ -160,10 +162,6 @@ const createShipmentSchema = Joi.object({
     .valid(...Shipment.HANDLING_METHODS)
     .required()
     .label("نوع بارگیری"),
-  unloading_method: Joi.string()
-    .valid(...Shipment.HANDLING_METHODS)
-    .required()
-    .label("نوع تخلیه"),
 
   // گیرنده
   receiver_name: Joi.string().min(2).max(100).required().label("نام گیرنده"),
@@ -174,6 +172,37 @@ const createShipmentSchema = Joi.object({
     .messages({
       "string.pattern.base": "{{#label}} باید به‌فرم ۰۹xxxxxxxxx باشد.",
     }),
+  receiver_national_id: Joi.string()
+    .allow("")
+    .optional()
+    .custom((value, helpers) => {
+      if (value === "" || isValidIranNationalId(value)) return value;
+      return helpers.error("any.invalid");
+    })
+    .label("کد ملی گیرنده")
+    .messages({ "any.invalid": "کد ملی گیرنده معتبر نیست." }),
+
+  receiver_postal_code: Joi.string()
+    .allow("")
+    .optional()
+    .custom((value, helpers) => {
+      if (value === "" || isValidIranPostalCode(value)) return value;
+      return helpers.error("any.invalid");
+    })
+    .label("کد پستی گیرنده")
+    .messages({ "any.invalid": "کد پستی گیرنده معتبر نیست." }),
+
+  receiver_national_id: Joi.string()
+    .pattern(/^\d{1,10}$/)
+    .allow("")
+    .optional()
+    .label("کد ملی گیرنده"),
+
+  receiver_postal_code: Joi.string()
+    .pattern(/^\d{1,10}$/)
+    .allow("")
+    .optional()
+    .label("کد پستی گیرنده"),
 
   // قیمت پیشنهادی صاحب کالا (نه قیمت نهایی)
   proposed_price: Joi.number()

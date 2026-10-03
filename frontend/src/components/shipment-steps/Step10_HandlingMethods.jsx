@@ -1,12 +1,12 @@
-import { ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
-import StepHeader from './StepHeader';
+import { ArrowUpFromLine } from "lucide-react";
+import StepHeader from "./StepHeader";
 
 const METHODS = [
-  { value: 'forklift', label: 'لیفتراک' },
-  { value: 'crane', label: 'جرثقیل' },
-  { value: 'manual', label: 'دستی' },
-  { value: 'ramp', label: 'رمپ' },
-  { value: 'other', label: 'سایر' },
+  { value: "forklift", label: "لیفتراک" },
+  { value: "crane", label: "جرثقیل" },
+  { value: "manual", label: "دستی" },
+  { value: "ramp", label: "رمپ" },
+  { value: "other", label: "سایر" },
 ];
 
 function MethodPicker({ icon: Icon, title, value, onSelect }) {
@@ -24,8 +24,8 @@ function MethodPicker({ icon: Icon, title, value, onSelect }) {
             onClick={() => onSelect(m.value)}
             className={`rounded-lg border px-2 py-2.5 text-xs font-medium transition-colors ${
               value === m.value
-                ? 'border-amber-500 bg-amber-50 text-amber-700'
-                : 'border-ink-100 text-ink-500 hover:border-ink-300'
+                ? "border-amber-500 bg-amber-50 text-amber-700"
+                : "border-ink-100 text-ink-500 hover:border-ink-300"
             }`}
           >
             {m.label}
@@ -39,18 +39,15 @@ function MethodPicker({ icon: Icon, title, value, onSelect }) {
 export default function Step10_HandlingMethods({ data, onChange }) {
   return (
     <div className="space-y-6">
-      <StepHeader title="نحوه‌ی بارگیری و تخلیه" description="تجهیزات مورد نیاز برای بارگیری در مبدأ و تخلیه در مقصد." />
+      <StepHeader
+        title="نحوه‌ی بارگیری"
+        description="تجهیزات مورد نیاز برای بارگیری در مبدأ."
+      />
       <MethodPicker
         icon={ArrowUpFromLine}
         title="نوع بارگیری در مبدأ"
         value={data.loading_method}
-        onSelect={(v) => onChange('loading_method', v)}
-      />
-      <MethodPicker
-        icon={ArrowDownToLine}
-        title="نوع تخلیه در مقصد"
-        value={data.unloading_method}
-        onSelect={(v) => onChange('unloading_method', v)}
+        onSelect={(v) => onChange("loading_method", v)}
       />
     </div>
   );

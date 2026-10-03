@@ -135,7 +135,6 @@ export default function Step2_Destination({ data, onChange }) {
         onChange={(e) => onChange("dest_address", e.target.value)}
         placeholder="پلاک، واحد و جزئیاتی که نقشه نشون نمی‌ده رو اینجا کامل کن"
         hint="با انتخاب روی نقشه خودکار پر می‌شود؛ در صورت نیاز ویرایشش کن."
-        required
       />
     </div>
   );

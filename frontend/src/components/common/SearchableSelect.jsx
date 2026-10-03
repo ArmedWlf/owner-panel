@@ -1,13 +1,17 @@
 import { useState, useRef, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown, X } from "lucide-react";
 
 const normalizeFa = (str) => {
   if (!str) return "";
+
   return String(str)
+    .normalize("NFKC")
+    .replace(/[\u064B-\u065F\u0670]/g, "")
     .replace(/[\u064A\u0649]/g, "ی")
     .replace(/[\u0643]/g, "ک")
     .replace(/[\u0640]/g, "")
-    .replace(/\u200c/g, " ")
+    .replace(/[\u200c\u200d\s]+/g, " ")
     .trim()
     .toLowerCase();
 };
@@ -41,6 +45,9 @@ export default function SearchableSelect({
   required = false,
   error = null,
   noResultsText = "موردی یافت نشد",
+  sortByRelevance = false,
+  portalDropdown = false,
+  dropdownMaxHeight = 280,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -48,6 +55,7 @@ export default function SearchableSelect({
   const wrapperRef = useRef(null);
   const inputRef = useRef(null);
   const listRef = useRef(null);
+  const [dropdownStyle, setDropdownStyle] = useState(null);
 
   const selectedItem = useMemo(() => {
     return options.find((opt) => String(opt.value) === String(value));
@@ -63,7 +71,12 @@ export default function SearchableSelect({
 
   useEffect(() => {
     const handleOutsideClick = (e) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(e.target) &&
+        listRef.current &&
+        !listRef.current.contains(e.target)
+      ) {
         setIsOpen(false);
         setSearchTerm(selectedItem ? selectedItem.label : "");
       }
@@ -71,6 +84,47 @@ export default function SearchableSelect({
     document.addEventListener("mousedown", handleOutsideClick);
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, [selectedItem]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setDropdownStyle(null);
+      return;
+    }
+
+    const updateDropdownPosition = () => {
+      const anchor = inputRef.current?.getBoundingClientRect();
+      if (!anchor) return;
+
+      const gap = 4;
+      const viewportPadding = 8;
+      const spaceBelow =
+        window.innerHeight - anchor.bottom - gap - viewportPadding;
+      const spaceAbove = anchor.top - gap - viewportPadding;
+      const openAbove = spaceBelow < 180 && spaceAbove > spaceBelow;
+      const availableSpace = openAbove ? spaceAbove : spaceBelow;
+
+      setDropdownStyle({
+        position: "fixed",
+        left: anchor.left,
+        width: anchor.width,
+        zIndex: 1200,
+        maxHeight: Math.max(80, Math.min(280, availableSpace)),
+        overflowY: "auto",
+        ...(openAbove
+          ? { bottom: window.innerHeight - anchor.top + gap }
+          : { top: anchor.bottom + gap }),
+      });
+    };
+
+    updateDropdownPosition();
+    window.addEventListener("resize", updateDropdownPosition);
+    window.addEventListener("scroll", updateDropdownPosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updateDropdownPosition);
+      window.removeEventListener("scroll", updateDropdownPosition, true);
+    };
+  }, [isOpen]);
 
   // فیلتر فقط بر اساس نام شهر / searchKey
   const filteredOptions = useMemo(() => {
@@ -80,11 +134,26 @@ export default function SearchableSelect({
     ) {
       return options;
     }
+
     const cleanQuery = normalizeFa(searchTerm);
-    return options.filter((opt) => {
-      const searchTarget = opt.searchKey || opt.label;
-      return normalizeFa(searchTarget).includes(cleanQuery);
-    });
+
+    return options
+      .map((opt, originalIndex) => {
+        const searchTarget = normalizeFa(opt.searchKey || opt.label);
+
+        if (!searchTarget.includes(cleanQuery)) return null;
+
+        return {
+          opt,
+          originalIndex,
+          priority: searchTarget.startsWith(cleanQuery) ? 0 : 1,
+        };
+      })
+      .filter(Boolean)
+      .sort(
+        (a, b) => a.priority - b.priority || a.originalIndex - b.originalIndex,
+      )
+      .map(({ opt }) => opt);
   }, [options, searchTerm, selectedItem]);
 
   // ریست ایندکس هایلایت با تغییر نتایج
@@ -207,44 +276,52 @@ export default function SearchableSelect({
           />
         </div>
       </div>
+      {isOpen &&
+        !disabled &&
+        dropdownStyle &&
+        createPortal(
+          <div
+            ref={listRef}
+            style={dropdownStyle}
+            className="rounded-lg border border-ink-100 bg-white shadow-xl"
+          >
+            {filteredOptions.length === 0 ? (
+              <div className="px-3 py-3 text-xs text-ink-300 text-center">
+                {noResultsText}
+              </div>
+            ) : (
+              filteredOptions.map((opt, idx) => {
+                const isSelected = String(opt.value) === String(value);
+                const isHighlighted = idx === highlightedIndex;
 
-      {isOpen && !disabled && (
-        <div
-          ref={listRef}
-          className="absolute inset-x-0 top-full z-[1100] mt-1 max-h-56 overflow-y-auto overscroll-contain rounded-lg border border-ink-100 bg-white shadow-xl"
-        >
-          {filteredOptions.length === 0 ? (
-            <div className="px-3 py-3 text-xs text-ink-300 text-center">
-              {noResultsText}
-            </div>
-          ) : (
-            filteredOptions.map((opt, idx) => {
-              const isSelected = String(opt.value) === String(value);
-              const isHighlighted = idx === highlightedIndex;
-
-              return (
-                <div
-                  key={opt.value}
-                  className={`px-3 py-2 text-sm cursor-pointer flex items-center justify-between border-b border-gray-50 last:border-0 ${
-                    isHighlighted
-                      ? "bg-amber-50 text-amber-900 font-medium"
-                      : ""
-                  } ${isSelected ? "bg-amber-100/70 font-semibold text-amber-950" : "text-ink-800"}`}
-                  onMouseEnter={() => setHighlightedIndex(idx)}
-                  onClick={() => handleSelect(opt)}
-                >
-                  <span>{opt.label}</span>
-                  {opt.subLabel && (
-                    <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-ink-400 font-normal pointer-events-none">
-                      {opt.subLabel}
-                    </span>
-                  )}
-                </div>
-              );
-            })
-          )}
-        </div>
-      )}
+                return (
+                  <div
+                    key={opt.value}
+                    className={`px-3 py-2 text-sm cursor-pointer flex items-center justify-between border-b border-gray-50 last:border-0 ${
+                      isHighlighted
+                        ? "bg-amber-50 text-amber-900 font-medium"
+                        : ""
+                    } ${
+                      isSelected
+                        ? "bg-amber-100/70 font-semibold text-amber-950"
+                        : "text-ink-800"
+                    }`}
+                    onMouseEnter={() => setHighlightedIndex(idx)}
+                    onClick={() => handleSelect(opt)}
+                  >
+                    <span>{opt.label}</span>
+                    {opt.subLabel && (
+                      <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-ink-400 font-normal pointer-events-none">
+                        {opt.subLabel}
+                      </span>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>,
+          document.body,
+        )}
 
       {error && (
         <span className="mt-1 block text-xs text-red-600">{error}</span>

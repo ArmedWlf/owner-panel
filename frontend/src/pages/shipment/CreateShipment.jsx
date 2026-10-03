@@ -19,6 +19,10 @@ import Step10_HandlingMethods from "../../components/shipment-steps/Step10_Handl
 import Step11_Contact from "../../components/shipment-steps/Step11_Contact";
 import Step12_Confirm from "../../components/shipment-steps/Step12_Confirm";
 import Step13_Done from "../../components/shipment-steps/Step13_Done";
+import {
+  isValidIranNationalId,
+  isValidIranPostalCode,
+} from "../../utils/receiverValidation";
 
 const STEPS = [
   { title: "مبدأ", Component: Step1_Origin },
@@ -40,17 +44,19 @@ const TOTAL_VISIBLE_STEPS = STEPS.length - 1; // بدون احتساب صفحه 
 
 const REQUIRED_FIELDS_BY_STEP = {
   1: ["origin_city_id", "origin_address", "origin_lat", "origin_lng"],
-  2: ["dest_city_id", "dest_address", "dest_lat", "dest_lng"],
+  2: ["dest_city_id"],
   3: ["cargo_type"],
   4: ["weight_kg"],
   6: ["cargo_value"],
   8: ["loading_date", "loading_time_from", "loading_time_to", "urgency"],
   9: ["vehicle_type_id"],
-  10: ["loading_method", "unloading_method"],
-  11: ["receiver_name", "receiver_phone"],
+  10: ["loading_method"],
+  11: ["receiver_name"],
 };
 
 const emptyFormData = {
+  receiver_national_id: "",
+  receiver_postal_code: "",
   origin_city_id: "",
   origin_zone_id: "",
   origin_address: "",
@@ -77,11 +83,14 @@ const emptyFormData = {
   urgency: "",
   vehicle_type_id: "",
   loading_method: "",
-  unloading_method: "",
   receiver_name: "",
   receiver_phone: "",
   proposed_price: "",
   trackingCode: "",
+  receiver_name: "",
+  receiver_phone: "",
+  receiver_national_id: "",
+  receiver_postal_code: "",
 };
 
 export default function CreateShipment() {
@@ -112,6 +121,13 @@ export default function CreateShipment() {
       !(Number(formData.cargo_value) >= MIN_CARGO_VALUE_RIAL)
     )
       return false;
+    if (
+      stepNum === 11 &&
+      formData.receiver_phone !== "" &&
+      !/^09\d{9}$/.test(String(formData.receiver_phone))
+    ) {
+      return false;
+    }
     return true;
   };
 
@@ -176,7 +192,14 @@ export default function CreateShipment() {
     ["origin_zone_id", "dest_zone_id"].forEach((k) => {
       if (payload[k] === "") payload[k] = null;
     });
-    ["length_cm", "width_cm", "height_cm"].forEach((k) => {
+    [
+      "length_cm",
+      "width_cm",
+      "height_cm",
+      "dest_address",
+      "dest_lat",
+      "dest_lng",
+    ].forEach((k) => {
       if (payload[k] === "") delete payload[k];
     });
 

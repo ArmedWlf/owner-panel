@@ -1,38 +1,39 @@
-import Input from '../common/Input';
-import StepHeader from './StepHeader';
+import Input from "../common/Input";
+import SearchableSelect from "../common/SearchableSelect";
+import StepHeader from "./StepHeader";
+import CARGO_TYPES from "../../../../shared/cargoTypes.json";
 
-const CARGO_TYPES = [
-  { value: 'general', label: 'کالای عمومی' },
-  { value: 'fragile', label: 'شکستنی / حساس' },
-  { value: 'perishable', label: 'فسادپذیر (خوراکی، دارویی)' },
-  { value: 'construction', label: 'مصالح ساختمانی' },
-  { value: 'industrial', label: 'قطعات صنعتی' },
-  { value: 'other', label: 'سایر' },
+const cargoOptions = [
+  ...CARGO_TYPES.filter((name) => name !== "سایر").map((name) => ({
+    value: name,
+    label: name,
+  })),
+  { value: "other", label: "سایر" },
 ];
 
 export default function Step3_CargoType({ data, onChange }) {
   return (
     <div className="space-y-5">
-      <StepHeader title="نوع و مشخصات بار" description="کالای خودتون رو با جزئیات کافی توصیف کنید تا راننده‌ی مناسب پیدا بشه." />
+      <StepHeader
+        title="نوع و مشخصات بار"
+        description="کالای خودتون رو با جزئیات کافی توصیف کنید تا راننده‌ی مناسب پیدا بشه."
+      />
 
-      <Input
-        as="select"
+      <SearchableSelect
         label="نوع کالا"
-        value={data.cargo_type || ''}
-        onChange={(e) => onChange('cargo_type', e.target.value)}
+        value={data.cargo_type || ""}
+        options={cargoOptions}
+        onChange={(value) => onChange("cargo_type", value)}
+        placeholder="جستجو یا انتخاب نوع کالا..."
         required
-      >
-        <option value="">انتخاب کنید</option>
-        {CARGO_TYPES.map((t) => (
-          <option key={t.value} value={t.value}>{t.label}</option>
-        ))}
-      </Input>
+        noResultsText="نوع کالایی با این مشخصات یافت نشد"
+      />
 
-      {data.cargo_type === 'other' && (
+      {data.cargo_type === "other" && (
         <Input
           label="توضیح نوع کالا"
-          value={data.cargo_type_other || ''}
-          onChange={(e) => onChange('cargo_type_other', e.target.value)}
+          value={data.cargo_type_other || ""}
+          onChange={(e) => onChange("cargo_type_other", e.target.value)}
           placeholder="نوع کالا را توضیح دهید"
           required
         />
@@ -40,8 +41,8 @@ export default function Step3_CargoType({ data, onChange }) {
 
       <Input
         label="نوع بسته‌بندی (اختیاری)"
-        value={data.packaging_type || ''}
-        onChange={(e) => onChange('packaging_type', e.target.value)}
+        value={data.packaging_type || ""}
+        onChange={(e) => onChange("packaging_type", e.target.value)}
         placeholder="مثلاً: پالت‌بندی‌شده، کارتنی، فله"
       />
     </div>
