@@ -4,6 +4,24 @@ import { getVehicleTypes } from '../../api/shipment.api';
 import StepHeader from './StepHeader';
 import { formatToman } from '../../utils/currency.util';
 
+const VEHICLE_VARIANTS = {
+  khavar: ['روباز', 'بغل بازشو', 'مسقف', 'مسقف اتاق بزرگ', 'کمپرسی', 'یخچال‌دار'],
+  '911': ['روباز', 'بغل بازشو', 'مسقف', 'مسقف اتاق بزرگ', 'کمپرسی', 'یخچال‌دار'],
+  single: ['روباز', 'بغل بازشو', 'مسقف', 'کمپرسی', 'یخچال‌دار'],
+  double: ['روباز', 'بغل بازشو', 'مسقف', 'کمپرسی', 'یخچال‌دار'],
+  flatbed: ['نیم لبه', 'لبه‌دار', 'ترانزیت چادری', 'کمپرسی', 'تیغه (کانتینربر)', 'کانتینر', 'یخچال‌دار', 'کمرشکن', 'بوژی'],
+};
+
+function vehicleCategory(title = '') {
+  const normalized = title.replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)));
+  if (normalized.includes('خاور')) return 'khavar';
+  if (normalized.includes('911')) return '911';
+  if (normalized.includes('کامیون تک')) return 'single';
+  if (normalized.includes('کامیون جفت')) return 'double';
+  if (normalized.includes('تریلی کفی')) return 'flatbed';
+  return null;
+}
+
 export default function Step9_Vehicle({ data, onChange }) {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,6 +33,11 @@ export default function Step9_Vehicle({ data, onChange }) {
       .finally(() => setLoading(false));
   }, []);
 
+  const supportedVehicles = vehicles.filter((vehicle) => vehicleCategory(vehicle.title));
+  const selectedVehicle = supportedVehicles.find((vehicle) => vehicle.id === data.vehicle_type_id);
+  const selectedCategory = selectedVehicle ? vehicleCategory(selectedVehicle.title) : null;
+  const variants = selectedCategory ? VEHICLE_VARIANTS[selectedCategory] : [];
+
   const suitable = (v) => {
     if (data.weight_kg && v.max_weight_kg < Number(data.weight_kg)) return false;
     if (data.length_cm && v.max_length_cm && v.max_length_cm < Number(data.length_cm)) return false;
@@ -25,20 +48,25 @@ export default function Step9_Vehicle({ data, onChange }) {
 
   return (
     <div className="space-y-5">
-      <StepHeader title="انتخاب نوع ناوگان" description="بر اساس وزن و ابعاد بار وارد شده، خودروهای مناسب را پیشنهاد می‌دهیم." />
+      <StepHeader title="انتخاب خودرو" description="بر اساس وزن و ابعاد بار وارد شده، خودروهای مناسب را پیشنهاد می‌دهیم." />
 
       {loading ? (
         <p className="text-sm text-ink-300">در حال دریافت فهرست خودروها...</p>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {vehicles.map((v) => {
+          {supportedVehicles.map((v) => {
             const active = data.vehicle_type_id === v.id;
             const fits = suitable(v);
             return (
               <button
                 type="button"
                 key={v.id}
-                onClick={() => onChange('vehicle_type_id', v.id)}
+                onClick={() => {
+                  if (data.vehicle_type_id !== v.id) {
+                    onChange('vehicle_type_id', v.id);
+                    onChange('vehicle_variant', '');
+                  }
+                }}
                 className={`flex items-start gap-3 rounded-lg border p-3.5 text-right transition-colors ${
                   active
                     ? 'border-amber-500 bg-amber-50'
@@ -67,10 +95,35 @@ export default function Step9_Vehicle({ data, onChange }) {
           })}
         </div>
       )}
-      {!loading && data.vehicle_type_id && !suitable(vehicles.find((v) => v.id === data.vehicle_type_id) || {}) && (
+      {!loading && data.vehicle_type_id && !suitable(supportedVehicles.find((v) => v.id === data.vehicle_type_id) || {}) && (
         <p className="rounded-lg bg-amber-50 px-3.5 py-2.5 text-xs text-amber-700">
           خودروی انتخابی با وزن/ابعاد بار شما تناسب کامل ندارد؛ این درخواست برای بررسی دقیق‌تر نزد اپراتور علامت‌گذاری می‌شود.
         </p>
+      )}
+      {selectedVehicle && (
+        <fieldset className="space-y-2">
+          <legend className="text-sm font-medium text-ink-700">نوع بدنه/کاربری</legend>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {variants.map((variant) => {
+              const active = data.vehicle_variant === variant;
+              return (
+                <button
+                  type="button"
+                  key={variant}
+                  aria-pressed={active}
+                  onClick={() => onChange('vehicle_variant', variant)}
+                  className={`rounded-lg border px-3 py-2.5 text-right text-sm transition-colors ${
+                    active
+                      ? 'border-amber-500 bg-amber-50 text-amber-700'
+                      : 'border-ink-100 bg-white text-ink-600 hover:border-ink-300'
+                  }`}
+                >
+                  {variant}
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
       )}
     </div>
   );
