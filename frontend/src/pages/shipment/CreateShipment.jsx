@@ -46,7 +46,7 @@ const REQUIRED_FIELDS_BY_STEP = {
   6: ["loading_date", "loading_time_from", "loading_time_to", "urgency"],
   7: ["vehicle_type_id", "vehicle_variants"],
   8: ["loading_method"],
-  9: ["receiver_name"],
+  9: ["receiver_name", "receiver_phone"],
 };
 
 const emptyFormData = {
@@ -119,7 +119,6 @@ export default function CreateShipment() {
       return false;
     if (
       stepNum === 9 &&
-      formData.receiver_phone !== "" &&
       !/^09\d{9}$/.test(String(formData.receiver_phone))
     ) {
       return false;
