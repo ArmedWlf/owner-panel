@@ -44,7 +44,7 @@ const REQUIRED_FIELDS_BY_STEP = {
   3: ["cargo_type", "weight_kg"],
   4: ["cargo_value"],
   6: ["loading_date", "loading_time_from", "loading_time_to", "urgency"],
-  7: ["vehicle_type_id", "vehicle_variant"],
+  7: ["vehicle_type_id", "vehicle_variants"],
   8: ["loading_method"],
   9: ["receiver_name"],
 };
@@ -77,7 +77,7 @@ const emptyFormData = {
   loading_time_to: "",
   urgency: "",
   vehicle_type_id: "",
-  vehicle_variant: "",
+  vehicle_variants: [],
   loading_method: "",
   receiver_name: "",
   receiver_phone: "",
@@ -105,12 +105,12 @@ export default function CreateShipment() {
 
   const isStepValid = (stepNum) => {
     const required = REQUIRED_FIELDS_BY_STEP[stepNum] || [];
-    const allFilled = required.every(
-      (key) =>
-        formData[key] !== "" &&
-        formData[key] !== undefined &&
-        formData[key] !== null,
-    );
+    const allFilled = required.every((key) => {
+      const value = formData[key];
+      return Array.isArray(value)
+        ? value.length > 0
+        : value !== "" && value !== undefined && value !== null;
+    });
     if (!allFilled) return false;
     if (
       stepNum === 4 &&
