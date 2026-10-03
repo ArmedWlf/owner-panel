@@ -2,9 +2,8 @@ import JalaliDatePicker from "../common/JalaliDatePicker";
 import StepHeader from "./StepHeader";
 
 const URGENCY_OPTIONS = [
-  { value: "today", label: "امروز" },
-  { value: "tomorrow", label: "فردا" },
-  { value: "scheduled", label: "زمان‌بندی‌شده" },
+  { value: "urgent", label: "فوری" },
+  { value: "scheduled", label: "با فرصت" },
 ];
 
 const TIME_RANGES = [
@@ -64,9 +63,9 @@ export default function Step8_DateUrgency({ data, onChange }) {
 
       <div>
         <span className="mb-1.5 block text-sm font-medium text-ink-700">
-          میزان فوریت
+          فوریت
         </span>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {URGENCY_OPTIONS.map((opt) => (
             <button
               type="button"
