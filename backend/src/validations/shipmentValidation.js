@@ -158,13 +158,15 @@ const createShipmentSchema = Joi.object({
 
   // خودرو و بارگیری/تخلیه
   vehicle_type_id: Joi.number().integer().required().label("نوع خودرو"),
-  vehicle_variant: Joi.string()
-    .valid(
+  vehicle_variants: Joi.array()
+    .items(Joi.string().valid(
       "روباز", "بغل بازشو", "مسقف", "مسقف اتاق بزرگ", "کمپرسی", "یخچال‌دار",
       "کفی", "نیم لبه", "لبه‌دار", "ترانزیت چادری", "تیغه (کانتینربر)", "کانتینر", "کمرشکن", "بوژی"
-    )
+    ))
+    .min(1)
+    .unique()
     .required()
-    .label("نوع بدنه/کاربری خودرو"),
+    .label("نوع گاری"),
   loading_method: Joi.string()
     .valid(...Shipment.HANDLING_METHODS)
     .required()
