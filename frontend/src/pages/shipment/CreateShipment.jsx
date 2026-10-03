@@ -8,9 +8,7 @@ import { getErrorMessage } from "../../utils/errorMessage";
 
 import Step1_Origin from "../../components/shipment-steps/Step1_Origin";
 import Step2_Destination from "../../components/shipment-steps/Step2_Destination";
-import Step3_CargoType from "../../components/shipment-steps/Step3_CargoType";
-import Step4_Weight from "../../components/shipment-steps/Step4_Weight";
-import Step5_Dimensions from "../../components/shipment-steps/Step5_Dimensions";
+import Step3_CargoInfo from "../../components/shipment-steps/Step3_CargoInfo";
 import Step6_Insurance from "../../components/shipment-steps/Step6_Insurance";
 import Step7_PhotosNotes from "../../components/shipment-steps/Step7_PhotosNotes";
 import Step8_DateUrgency from "../../components/shipment-steps/Step8_DateUrgency";
@@ -27,9 +25,7 @@ import {
 const STEPS = [
   { title: "مبدأ", Component: Step1_Origin },
   { title: "مقصد", Component: Step2_Destination },
-  { title: "نوع کالا", Component: Step3_CargoType },
-  { title: "وزن", Component: Step4_Weight },
-  { title: "ابعاد", Component: Step5_Dimensions },
+  { title: "اطلاعات کالا", Component: Step3_CargoInfo },
   { title: "ارزش کالا", Component: Step6_Insurance },
   { title: "عکس و توضیح", Component: Step7_PhotosNotes },
   { title: "زمان", Component: Step8_DateUrgency },
@@ -45,13 +41,12 @@ const TOTAL_VISIBLE_STEPS = STEPS.length - 1; // بدون احتساب صفحه 
 const REQUIRED_FIELDS_BY_STEP = {
   1: ["origin_city_id", "origin_address", "origin_lat", "origin_lng"],
   2: ["dest_city_id"],
-  3: ["cargo_type"],
-  4: ["weight_kg"],
-  6: ["cargo_value"],
-  8: ["loading_date", "loading_time_from", "loading_time_to", "urgency"],
-  9: ["vehicle_type_id"],
-  10: ["loading_method"],
-  11: ["receiver_name"],
+  3: ["cargo_type", "weight_kg"],
+  4: ["cargo_value"],
+  6: ["loading_date", "loading_time_from", "loading_time_to", "urgency"],
+  7: ["vehicle_type_id"],
+  8: ["loading_method"],
+  9: ["receiver_name"],
 };
 
 const emptyFormData = {
@@ -117,12 +112,12 @@ export default function CreateShipment() {
     );
     if (!allFilled) return false;
     if (
-      stepNum === 6 &&
+      stepNum === 4 &&
       !(Number(formData.cargo_value) >= MIN_CARGO_VALUE_RIAL)
     )
       return false;
     if (
-      stepNum === 11 &&
+      stepNum === 9 &&
       formData.receiver_phone !== "" &&
       !/^09\d{9}$/.test(String(formData.receiver_phone))
     ) {
@@ -288,32 +283,23 @@ export default function CreateShipment() {
 }
 
 function RouteProgress({ current, maxReached, onStepClick }) {
-  const fillPercent =
-    TOTAL_VISIBLE_STEPS <= 1
-      ? 100
-      : Math.max(
-          0,
-          Math.min(100, ((current - 1) / (TOTAL_VISIBLE_STEPS - 1)) * 100),
-        );
+  const fillPercent = ((current - 1) / (TOTAL_VISIBLE_STEPS - 1)) * 100;
 
   return (
-    <div className="w-full pb-2">
-      <div className="relative grid w-full grid-cols-12 items-start px-1">
-        <div className="absolute inset-x-1 top-3 h-px bg-dash-line bg-[length:18px_1px] bg-repeat-x sm:top-4" />
-
+    <div className="overflow-x-auto pb-2">
+      <div className="relative flex items-center justify-between px-1">
+        <div className="absolute inset-x-1 top-1/2 h-px -translate-y-1/2 bg-dash-line bg-[length:18px_1px] bg-repeat-x" />
         <motion.div
-          className="absolute right-1 top-3 h-[3px] -translate-y-1/2 rounded-full bg-amber-gradient sm:top-4"
+          className="absolute right-1 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-amber-gradient"
           initial={false}
           animate={{ width: `${fillPercent}%` }}
           transition={{ type: "spring", stiffness: 300, damping: 32 }}
         />
-
         {STEPS.slice(0, TOTAL_VISIBLE_STEPS).map((step, idx) => {
           const num = idx + 1;
           const done = num < current;
           const active = num === current;
           const reachable = num <= maxReached;
-
           return (
             <button
               type="button"
@@ -325,14 +311,14 @@ function RouteProgress({ current, maxReached, onStepClick }) {
                   ? `برو به «${step.title}»`
                   : "هنوز به این مرحله نرسیده‌اید"
               }
-              className={`relative z-10 flex min-w-0 w-full flex-col items-center gap-1.5 bg-transparent ${
+              className={`relative flex flex-col items-center gap-1.5 bg-transparent ${
                 reachable ? "cursor-pointer" : "cursor-not-allowed"
               }`}
             >
               <motion.span
                 animate={active ? { scale: 1.12 } : { scale: 1 }}
                 transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                className={`tabular flex h-6 w-6 items-center justify-center rounded-full border-2 text-[10px] font-bold sm:h-8 sm:w-8 sm:text-xs ${
+                className={`tabular flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full border-2 text-xs font-bold ${
                   done
                     ? "border-ink-900 bg-ink-900 text-white"
                     : active
@@ -344,9 +330,8 @@ function RouteProgress({ current, maxReached, onStepClick }) {
               >
                 {done ? <Check size={14} /> : num}
               </motion.span>
-
               <span
-                className={`hidden max-w-full truncate text-center text-[11px] sm:block ${
+                className={`hidden whitespace-nowrap text-[11px] lg:block ${
                   active
                     ? "font-medium text-ink-900"
                     : reachable
@@ -360,6 +345,9 @@ function RouteProgress({ current, maxReached, onStepClick }) {
           );
         })}
       </div>
+      <p className="mt-2 text-center text-xs font-medium text-ink-900 lg:hidden">
+        {STEPS[current - 1].title}
+      </p>
     </div>
   );
 }
