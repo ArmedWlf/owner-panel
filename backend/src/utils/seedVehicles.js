@@ -59,7 +59,18 @@ const seedVehicleTypes = async () => {
   const canonicalize = async ({ matches, title, maxWeight }) => {
     const matched = rows.filter((row) => matches(normalizeTitle(row.title)));
     let canonical = matched.find((row) => row.is_active) || matched[0];
-    if (!canonical) return null;
+    if (!canonical) {
+      const defaults = DEFAULT_VEHICLE_TYPES.find((item) => matches(normalizeTitle(item.title)));
+      if (!defaults) return null;
+      canonical = await VehicleType.create({
+        ...defaults,
+        title,
+        max_weight_kg: maxWeight,
+        is_active: true,
+      });
+      rows.push(canonical);
+      return canonical;
+    }
 
     await canonical.update({
       title,
