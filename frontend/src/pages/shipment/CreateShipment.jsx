@@ -288,23 +288,32 @@ export default function CreateShipment() {
 }
 
 function RouteProgress({ current, maxReached, onStepClick }) {
-  const fillPercent = ((current - 1) / (TOTAL_VISIBLE_STEPS - 1)) * 100;
+  const fillPercent =
+    TOTAL_VISIBLE_STEPS <= 1
+      ? 100
+      : Math.max(
+          0,
+          Math.min(100, ((current - 1) / (TOTAL_VISIBLE_STEPS - 1)) * 100),
+        );
 
   return (
-    <div className="overflow-x-auto pb-2">
-      <div className="relative flex min-w-[820px] items-center justify-between px-1">
-        <div className="absolute inset-x-1 top-1/2 h-px -translate-y-1/2 bg-dash-line bg-[length:18px_1px] bg-repeat-x" />
+    <div className="w-full pb-2">
+      <div className="relative grid w-full grid-cols-12 items-start px-1">
+        <div className="absolute inset-x-1 top-3 h-px bg-dash-line bg-[length:18px_1px] bg-repeat-x sm:top-4" />
+
         <motion.div
-          className="absolute right-1 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-amber-gradient"
+          className="absolute right-1 top-3 h-[3px] -translate-y-1/2 rounded-full bg-amber-gradient sm:top-4"
           initial={false}
           animate={{ width: `${fillPercent}%` }}
           transition={{ type: "spring", stiffness: 300, damping: 32 }}
         />
+
         {STEPS.slice(0, TOTAL_VISIBLE_STEPS).map((step, idx) => {
           const num = idx + 1;
           const done = num < current;
           const active = num === current;
           const reachable = num <= maxReached;
+
           return (
             <button
               type="button"
@@ -316,14 +325,14 @@ function RouteProgress({ current, maxReached, onStepClick }) {
                   ? `برو به «${step.title}»`
                   : "هنوز به این مرحله نرسیده‌اید"
               }
-              className={`relative flex flex-col items-center gap-1.5 bg-transparent ${
+              className={`relative z-10 flex min-w-0 w-full flex-col items-center gap-1.5 bg-transparent ${
                 reachable ? "cursor-pointer" : "cursor-not-allowed"
               }`}
             >
               <motion.span
                 animate={active ? { scale: 1.12 } : { scale: 1 }}
                 transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                className={`tabular flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-bold ${
+                className={`tabular flex h-6 w-6 items-center justify-center rounded-full border-2 text-[10px] font-bold sm:h-8 sm:w-8 sm:text-xs ${
                   done
                     ? "border-ink-900 bg-ink-900 text-white"
                     : active
@@ -335,8 +344,9 @@ function RouteProgress({ current, maxReached, onStepClick }) {
               >
                 {done ? <Check size={14} /> : num}
               </motion.span>
+
               <span
-                className={`whitespace-nowrap text-[11px] ${
+                className={`hidden max-w-full truncate text-center text-[11px] sm:block ${
                   active
                     ? "font-medium text-ink-900"
                     : reachable
