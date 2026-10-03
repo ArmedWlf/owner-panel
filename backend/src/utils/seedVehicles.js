@@ -3,15 +3,7 @@ const { VehicleType } = require("../models");
 
 const DEFAULT_VEHICLE_TYPES = [
   {
-    title: "خاور",
-    max_weight_kg: 5000,
-    max_length_cm: 430,
-    max_width_cm: 200,
-    max_height_cm: 210,
-    base_price: 4500000,
-  },
-  {
-    title: "۹۱۱",
+    title: "خاور/۹۱۱",
     max_weight_kg: 5000,
     max_length_cm: 430,
     max_width_cm: 200,
@@ -35,7 +27,7 @@ const DEFAULT_VEHICLE_TYPES = [
     base_price: 9500000,
   },
   {
-    title: "تریلی کفی",
+    title: "تریلی عادی",
     max_weight_kg: 27000,
     max_length_cm: 1200,
     max_width_cm: 245,
@@ -85,26 +77,14 @@ const seedVehicleTypes = async () => {
     return canonical;
   };
 
-  // Preserve existing IDs/references while renaming the old Khavar entry and enforcing capacity.
-  let khavar = await canonicalize({
-    matches: (title) => title === "خاور" || title.startsWith("خاور مسقف"),
-    title: "خاور",
+  // Preserve existing shipment references while consolidating Khavar/911 into one active option.
+  let khavar911 = await canonicalize({
+    matches: (title) => title === "خاور/911" || title === "خاور" || title.startsWith("خاور مسقف") || title === "911",
+    title: "خاور/۹۱۱",
     maxWeight: 5000,
   });
-  if (!khavar) {
-    khavar = await VehicleType.create(DEFAULT_VEHICLE_TYPES[0]);
-  }
-
-  // Reuse an existing 911 row when possible; otherwise copy Khavar's price/dimensions.
-  const vehicle911 = await canonicalize({
-    matches: (title) => title === "911",
-    title: "۹۱۱",
-    maxWeight: 5000,
-  });
-  if (!vehicle911) {
-    const khavarData = khavar.get({ plain: true });
-    delete khavarData.id;
-    await VehicleType.create({ ...khavarData, title: "۹۱۱", max_weight_kg: 5000, is_active: true });
+  if (!khavar911) {
+    khavar911 = await VehicleType.create(DEFAULT_VEHICLE_TYPES[0]);
   }
 
   // Keep the existing truck options and their IDs/capacities, but expose one canonical entry each.
@@ -119,8 +99,8 @@ const seedVehicleTypes = async () => {
     maxWeight: 15000,
   });
   await canonicalize({
-    matches: (title) => title.includes("تریلی کفی"),
-    title: "تریلی کفی",
+    matches: (title) => title.includes("تریلی کفی") || title.includes("تریلی عادی"),
+    title: "تریلی عادی",
     maxWeight: 27000,
   });
 
