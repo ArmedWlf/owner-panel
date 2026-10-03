@@ -33,6 +33,7 @@ export default function Step11_Contact({ data, onChange }) {
       />
       <Input
         label="شماره تماس گیرنده"
+        required
         icon={Phone}
         dir="ltr"
         className="tabular text-left"
@@ -47,7 +48,7 @@ export default function Step11_Contact({ data, onChange }) {
       />
 
       <Input
-        label="کد ملی گیرنده"
+        label="کد ملی گیرنده (اختیاری)"
         icon={Fingerprint}
         dir="ltr"
         className="tabular text-left"
@@ -64,7 +65,7 @@ export default function Step11_Contact({ data, onChange }) {
         error={nationalIdInvalid ? "کد ملی معتبر نیست." : undefined}
       />
       <Input
-        label="کد پستی گیرنده"
+        label="کد پستی گیرنده (اختیاری)"
         icon={MapPin}
         dir="ltr"
         className="tabular text-left"
