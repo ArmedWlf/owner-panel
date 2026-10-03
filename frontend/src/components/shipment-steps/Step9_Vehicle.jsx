@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Truck } from 'lucide-react';
 import { getVehicleTypes } from '../../api/shipment.api';
 import StepHeader from './StepHeader';
-import { formatToman } from '../../utils/currency.util';
 
 const VEHICLE_VARIANTS = {
   khavar911: ['روباز', 'بغل بازشو', 'مسقف', 'مسقف اتاق بزرگ', 'کمپرسی', 'یخچال‌دار'],
@@ -16,7 +15,7 @@ function vehicleCategory(title = '') {
   if (normalized.includes('خاور') || normalized.includes('911')) return 'khavar911';
   if (normalized.includes('کامیون تک')) return 'single';
   if (normalized.includes('کامیون جفت')) return 'double';
-  if (normalized.includes('تریلی عادی') || normalized.includes('تریلی کفی')) return 'flatbed';
+  if (normalized.includes('تریلی')) return 'flatbed';
   return null;
 }
 
@@ -35,6 +34,8 @@ export default function Step9_Vehicle({ data, onChange }) {
   const selectedVehicle = supportedVehicles.find((vehicle) => vehicle.id === data.vehicle_type_id);
   const selectedCategory = selectedVehicle ? vehicleCategory(selectedVehicle.title) : null;
   const variants = selectedCategory ? VEHICLE_VARIANTS[selectedCategory] : [];
+  const selectedVariants = Array.isArray(data.vehicle_variants) ? data.vehicle_variants : [];
+  const displayTitle = (vehicle) => vehicleCategory(vehicle.title) === 'flatbed' ? 'تریلی' : vehicle.title;
 
   const suitable = (v) => {
     if (data.weight_kg && v.max_weight_kg < Number(data.weight_kg)) return false;
@@ -46,7 +47,7 @@ export default function Step9_Vehicle({ data, onChange }) {
 
   return (
     <div className="space-y-5">
-      <StepHeader title="انتخاب نوع ناوگان" description="بر اساس وزن و ابعاد بار وارد شده، خودروهای مناسب را پیشنهاد می‌دهیم." />
+      <StepHeader title="انتخاب نوع کشنده" description="بر اساس وزن و ابعاد بار وارد شده، خودروهای مناسب را پیشنهاد می‌دهیم." />
 
       {loading ? (
         <p className="text-sm text-ink-300">در حال دریافت فهرست خودروها...</p>
@@ -62,7 +63,7 @@ export default function Step9_Vehicle({ data, onChange }) {
                 onClick={() => {
                   if (data.vehicle_type_id !== v.id) {
                     onChange('vehicle_type_id', v.id);
-                    onChange('vehicle_variant', '');
+                    onChange('vehicle_variants', []);
                   }
                 }}
                 className={`flex items-start gap-3 rounded-lg border p-3.5 text-right transition-colors ${
@@ -79,13 +80,10 @@ export default function Step9_Vehicle({ data, onChange }) {
                   <Truck size={17} />
                 </span>
                 <span>
-                  <span className="block text-sm font-medium text-ink-900">{v.title}</span>
+                  <span className="block text-sm font-medium text-ink-900">{displayTitle(v)}</span>
                   <span className="tabular mt-0.5 block text-xs text-ink-300">
                     تا {v.max_weight_kg.toLocaleString('fa-IR')} کیلوگرم
                     {!fits && ' · متناسب با بار شما نیست'}
-                  </span>
-                  <span className="tabular mt-1 block text-xs font-medium text-ink-500">
-                    از {formatToman(v.base_price)} تومان
                   </span>
                 </span>
               </button>
@@ -100,16 +98,16 @@ export default function Step9_Vehicle({ data, onChange }) {
       )}
       {selectedVehicle && (
         <fieldset className="space-y-2">
-          <legend className="text-sm font-medium text-ink-700">نوع بدنه/کاربری</legend>
+          <legend className="text-sm font-medium text-ink-700">انتخاب نوع گاری</legend>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {variants.map((variant) => {
-              const active = data.vehicle_variant === variant;
+              const active = selectedVariants.includes(variant);
               return (
                 <button
                   type="button"
                   key={variant}
                   aria-pressed={active}
-                  onClick={() => onChange('vehicle_variant', variant)}
+                  onClick={() => onChange('vehicle_variants', active ? selectedVariants.filter((item) => item !== variant) : [...selectedVariants, variant])}
                   className={`rounded-lg border px-3 py-2.5 text-right text-sm transition-colors ${
                     active
                       ? 'border-amber-500 bg-amber-50 text-amber-700'
