@@ -27,7 +27,7 @@ const DEFAULT_VEHICLE_TYPES = [
     base_price: 9500000,
   },
   {
-    title: "تریلی عادی",
+    title: "تریلی",
     max_weight_kg: 27000,
     max_length_cm: 1200,
     max_width_cm: 245,
@@ -99,8 +99,8 @@ const seedVehicleTypes = async () => {
     maxWeight: 15000,
   });
   await canonicalize({
-    matches: (title) => title.includes("تریلی کفی") || title.includes("تریلی عادی"),
-    title: "تریلی عادی",
+    matches: (title) => title.includes("تریلی کفی") || title.includes("تریلی عادی") || title === "تریلی",
+    title: "تریلی",
     maxWeight: 27000,
   });
 
