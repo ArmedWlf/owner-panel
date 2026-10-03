@@ -35,7 +35,7 @@ export default function Step8_DateUrgency({ data, onChange }) {
 
       <fieldset>
         <legend className="mb-2 block text-sm font-medium text-ink-700">
-          انتخاب بازه زمانی <span className="text-red-500" aria-hidden="true">*</span>
+          بازه‌ی بارگیری <span className="text-red-500" aria-hidden="true">*</span>
         </legend>
         <div className="grid grid-cols-2 gap-2 sm:gap-3">
           {TIME_RANGES.map((range) => {
