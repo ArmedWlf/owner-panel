@@ -85,11 +85,12 @@ async function validateReferences(payload) {
     { matches: (value) => value.includes('خاور') || value.includes('911'), variants: ['روباز', 'بغل بازشو', 'مسقف', 'مسقف اتاق بزرگ', 'کمپرسی', 'یخچال‌دار'] },
     { matches: (value) => value.includes('کامیون تک'), variants: ['روباز', 'بغل بازشو', 'مسقف', 'کمپرسی', 'یخچال‌دار'] },
     { matches: (value) => value.includes('کامیون جفت'), variants: ['روباز', 'بغل بازشو', 'مسقف', 'کمپرسی', 'یخچال‌دار'] },
-    { matches: (value) => value.includes('تریلی عادی') || value.includes('تریلی کفی'), variants: ['کفی', 'نیم لبه', 'لبه‌دار', 'ترانزیت چادری', 'کمپرسی', 'تیغه (کانتینربر)', 'کانتینر', 'یخچال‌دار', 'کمرشکن', 'بوژی'] },
+    { matches: (value) => value.includes('تریلی'), variants: ['کفی', 'نیم لبه', 'لبه‌دار', 'ترانزیت چادری', 'کمپرسی', 'تیغه (کانتینربر)', 'کانتینر', 'یخچال‌دار', 'کمرشکن', 'بوژی'] },
   ];
   const variantGroup = variantGroups.find((group) => group.matches(title));
-  if (!variantGroup || !variantGroup.variants.includes(payload.vehicle_variant)) {
-    throw new AppError('نوع بدنه/کاربری با خودروی انتخابی سازگار نیست.', 400);
+  const variants = payload.vehicle_variants;
+  if (!variantGroup || !Array.isArray(variants) || variants.length === 0 || variants.some((variant) => !variantGroup.variants.includes(variant))) {
+    throw new AppError('نوع گاری با خودروی انتخابی سازگار نیست.', 400);
   }
 }
 
