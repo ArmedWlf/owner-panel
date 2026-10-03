@@ -44,7 +44,7 @@ const REQUIRED_FIELDS_BY_STEP = {
   3: ["cargo_type", "weight_kg"],
   4: ["cargo_value"],
   6: ["loading_date", "loading_time_from", "loading_time_to", "urgency"],
-  7: ["vehicle_type_id"],
+  7: ["vehicle_type_id", "vehicle_variant"],
   8: ["loading_method"],
   9: ["receiver_name"],
 };
@@ -77,6 +77,7 @@ const emptyFormData = {
   loading_time_to: "",
   urgency: "",
   vehicle_type_id: "",
+  vehicle_variant: "",
   loading_method: "",
   receiver_name: "",
   receiver_phone: "",
