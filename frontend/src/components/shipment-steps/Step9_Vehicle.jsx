@@ -5,20 +5,18 @@ import StepHeader from './StepHeader';
 import { formatToman } from '../../utils/currency.util';
 
 const VEHICLE_VARIANTS = {
-  khavar: ['روباز', 'بغل بازشو', 'مسقف', 'مسقف اتاق بزرگ', 'کمپرسی', 'یخچال‌دار'],
-  '911': ['روباز', 'بغل بازشو', 'مسقف', 'مسقف اتاق بزرگ', 'کمپرسی', 'یخچال‌دار'],
+  khavar911: ['روباز', 'بغل بازشو', 'مسقف', 'مسقف اتاق بزرگ', 'کمپرسی', 'یخچال‌دار'],
   single: ['روباز', 'بغل بازشو', 'مسقف', 'کمپرسی', 'یخچال‌دار'],
   double: ['روباز', 'بغل بازشو', 'مسقف', 'کمپرسی', 'یخچال‌دار'],
-  flatbed: ['نیم لبه', 'لبه‌دار', 'ترانزیت چادری', 'کمپرسی', 'تیغه (کانتینربر)', 'کانتینر', 'یخچال‌دار', 'کمرشکن', 'بوژی'],
+  flatbed: ['کفی', 'نیم لبه', 'لبه‌دار', 'ترانزیت چادری', 'کمپرسی', 'تیغه (کانتینربر)', 'کانتینر', 'یخچال‌دار', 'کمرشکن', 'بوژی'],
 };
 
 function vehicleCategory(title = '') {
   const normalized = title.replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)));
-  if (normalized.includes('خاور')) return 'khavar';
-  if (normalized.includes('911')) return '911';
+  if (normalized.includes('خاور') || normalized.includes('911')) return 'khavar911';
   if (normalized.includes('کامیون تک')) return 'single';
   if (normalized.includes('کامیون جفت')) return 'double';
-  if (normalized.includes('تریلی کفی')) return 'flatbed';
+  if (normalized.includes('تریلی عادی') || normalized.includes('تریلی کفی')) return 'flatbed';
   return null;
 }
 
