@@ -148,7 +148,7 @@ const createShipmentSchema = Joi.object({
     .required()
     .label("ساعت شروع بارگیری"),
   loading_time_to: Joi.string()
-    .pattern(/^([01]\d|2[0-3]):[0-5]\d$/)
+    .pattern(/^(?:([01]\d|2[0-3]):[0-5]\d|24:00)$/)
     .required()
     .label("ساعت پایان بارگیری"),
   urgency: Joi.string()
