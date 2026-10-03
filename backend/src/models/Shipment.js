@@ -72,6 +72,12 @@ const Shipment = sequelize.define(
     loading_date: { type: DataTypes.DATEONLY, allowNull: false },
     loading_time_from: { type: DataTypes.STRING(5), allowNull: false }, // "08:00"
     loading_time_to: { type: DataTypes.STRING(5), allowNull: false }, // "18:00"
+    // همه‌ی بازه‌های انتخابی کاربر، مثلاً ["08:00-12:00", "16:00-20:00"]
+    loading_time_ranges: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      defaultValue: [],
+    },
     urgency: {
       type: DataTypes.ENUM(...URGENCY_LEVELS),
       allowNull: false,
@@ -81,7 +87,11 @@ const Shipment = sequelize.define(
     // مرحله ۸: نوع خودرو
     vehicle_type_id: { type: DataTypes.INTEGER, allowNull: false },
     vehicle_variant: { type: DataTypes.STRING(50), allowNull: true }, // legacy single selection
-    vehicle_variants: { type: DataTypes.JSON, allowNull: true, defaultValue: [] },
+    vehicle_variants: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      defaultValue: [],
+    },
 
     // مرحله ۱۰ و ۱۱: نوع بارگیری/تخلیه
     loading_method: {

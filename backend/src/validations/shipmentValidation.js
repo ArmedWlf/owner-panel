@@ -151,6 +151,19 @@ const createShipmentSchema = Joi.object({
     .pattern(/^(?:([01]\d|2[0-3]):[0-5]\d|24:00)$/)
     .required()
     .label("ساعت پایان بارگیری"),
+  loading_time_ranges: Joi.array()
+    .items(
+      Joi.string().valid(
+        "08:00-12:00",
+        "12:00-16:00",
+        "16:00-20:00",
+        "20:00-24:00",
+      ),
+    )
+    .min(1)
+    .unique()
+    .required()
+    .label("بازه‌های زمانی بارگیری"),
   urgency: Joi.string()
     .valid(...Shipment.URGENCY_LEVELS)
     .required()
@@ -159,10 +172,24 @@ const createShipmentSchema = Joi.object({
   // خودرو و بارگیری/تخلیه
   vehicle_type_id: Joi.number().integer().required().label("نوع خودرو"),
   vehicle_variants: Joi.array()
-    .items(Joi.string().valid(
-      "روباز", "بغل بازشو", "مسقف", "مسقف اتاق بزرگ", "کمپرسی", "یخچال‌دار",
-      "کفی", "نیم لبه", "لبه‌دار", "ترانزیت چادری", "تیغه (کانتینربر)", "کانتینر", "کمرشکن", "بوژی"
-    ))
+    .items(
+      Joi.string().valid(
+        "روباز",
+        "بغل بازشو",
+        "مسقف",
+        "مسقف اتاق بزرگ",
+        "کمپرسی",
+        "یخچال‌دار",
+        "کفی",
+        "نیم لبه",
+        "لبه‌دار",
+        "ترانزیت چادری",
+        "تیغه (کانتینربر)",
+        "کانتینر",
+        "کمرشکن",
+        "بوژی",
+      ),
+    )
     .min(1)
     .unique()
     .required()
@@ -227,6 +254,19 @@ const createShipmentSchema = Joi.object({
   .custom((value, helpers) => {
     if (value.loading_time_from >= value.loading_time_to) {
       return helpers.message("ساعت پایان بارگیری باید بعد از ساعت شروع باشد.");
+    }
+    // ساعت شروع/پایان باید با اولین شروع و آخرین پایان بازه‌های انتخابی برابر باشد
+    const ranges = Array.isArray(value.loading_time_ranges)
+      ? [...value.loading_time_ranges].sort()
+      : [];
+    if (
+      ranges.length &&
+      (value.loading_time_from !== ranges[0].split("-")[0] ||
+        value.loading_time_to !== ranges[ranges.length - 1].split("-")[1])
+    ) {
+      return helpers.message(
+        "بازه‌های زمانی بارگیری با ساعت شروع و پایان هم‌خوانی ندارند.",
+      );
     }
     return value;
   })

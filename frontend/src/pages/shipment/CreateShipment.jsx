@@ -75,6 +75,7 @@ const emptyFormData = {
   loading_date: "",
   loading_time_from: "",
   loading_time_to: "",
+  loading_time_ranges: [],
   urgency: "",
   vehicle_type_id: "",
   vehicle_variants: [],
@@ -117,10 +118,7 @@ export default function CreateShipment() {
       !(Number(formData.cargo_value) >= MIN_CARGO_VALUE_RIAL)
     )
       return false;
-    if (
-      stepNum === 9 &&
-      !/^09\d{9}$/.test(String(formData.receiver_phone))
-    ) {
+    if (stepNum === 9 && !/^09\d{9}$/.test(String(formData.receiver_phone))) {
       return false;
     }
     return true;
