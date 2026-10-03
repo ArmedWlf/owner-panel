@@ -80,6 +80,17 @@ async function validateReferences(payload) {
   if (!vehicle || !vehicle.is_active) {
     throw new AppError('نوع خودروی انتخابی معتبر نیست.', 400);
   }
+  const title = (vehicle.title || '').replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)));
+  const variantGroups = [
+    { matches: (value) => value.includes('خاور') || value.includes('911'), variants: ['روباز', 'بغل بازشو', 'مسقف', 'مسقف اتاق بزرگ', 'کمپرسی', 'یخچال‌دار'] },
+    { matches: (value) => value.includes('کامیون تک'), variants: ['روباز', 'بغل بازشو', 'مسقف', 'کمپرسی', 'یخچال‌دار'] },
+    { matches: (value) => value.includes('کامیون جفت'), variants: ['روباز', 'بغل بازشو', 'مسقف', 'کمپرسی', 'یخچال‌دار'] },
+    { matches: (value) => value.includes('تریلی کفی'), variants: ['نیم لبه', 'لبه‌دار', 'ترانزیت چادری', 'کمپرسی', 'تیغه (کانتینربر)', 'کانتینر', 'یخچال‌دار', 'کمرشکن', 'بوژی'] },
+  ];
+  const variantGroup = variantGroups.find((group) => group.matches(title));
+  if (!variantGroup || !variantGroup.variants.includes(payload.vehicle_variant)) {
+    throw new AppError('نوع بدنه/کاربری با خودروی انتخابی سازگار نیست.', 400);
+  }
 }
 
 async function getMyShipments(ownerId, { status } = {}) {
