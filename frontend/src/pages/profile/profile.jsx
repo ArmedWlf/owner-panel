@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Camera, Loader2, Save } from "lucide-react";
+import { isValidNationalId } from "../../utils/nationalId";
 import { getProfile, updateProfile } from "../../api/auth.api";
 import { uploadShipmentPhotos } from "../../api/upload.api";
 import { useAuth } from "../../hooks/useAuth";
@@ -13,6 +14,7 @@ import { getErrorMessage } from "../../utils/errorMessage";
 export default function Profile() {
   const { updateUser } = useAuth();
   const toast = useToast();
+
   const [profile, setProfile] = useState(null);
   const [form, setForm] = useState({
     first_name: "",
@@ -20,6 +22,7 @@ export default function Profile() {
     company_name: "",
     national_id: "",
   });
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -50,8 +53,15 @@ export default function Profile() {
 
   const handleSave = async (e) => {
     e.preventDefault();
+
+    if (!isValidNationalId(form.national_id)) {
+      setError("کد ملی معتبر (۱۰ رقم) وارد کنید.");
+      return;
+    }
+
     setError("");
     setSaving(true);
+
     try {
       const data = await updateProfile({
         first_name: form.first_name.trim(),
@@ -59,6 +69,7 @@ export default function Profile() {
         company_name: form.company_name.trim(),
         national_id: form.national_id,
       });
+
       applyProfile(data);
       toast.success("تغییرات پروفایل ذخیره شد.");
     } catch (err) {
@@ -68,12 +79,14 @@ export default function Profile() {
     }
   };
 
-  // آپلود با همان endpoint آپلود عکس موجود انجام می‌شود، سپس مسیر عکس در پروفایل ذخیره می‌شود
   const handlePhotoChange = async (e) => {
     const file = e.target.files?.[0];
     e.target.value = "";
+
     if (!file) return;
+
     setUploading(true);
+
     try {
       const [url] = await uploadShipmentPhotos([file]);
       const data = await updateProfile({ avatar_url: url });
@@ -89,6 +102,7 @@ export default function Profile() {
 
   const handleRemovePhoto = async () => {
     setUploading(true);
+
     try {
       const data = await updateProfile({ avatar_url: "" });
       setProfile(data);
@@ -128,15 +142,18 @@ export default function Profile() {
           firstName={form.first_name}
           lastName={form.last_name}
         />
+
         <div className="min-w-0 flex-1 text-center sm:text-right">
           <p className="truncate text-lg font-bold text-ink-900">
             {displayName || "—"}
           </p>
+
           {form.company_name && (
             <p className="mt-0.5 truncate text-sm text-ink-400">
               {form.company_name}
             </p>
           )}
+
           <div className="mt-3 flex flex-wrap items-center justify-center gap-3 sm:justify-start">
             <label className="flex w-fit cursor-pointer items-center gap-2 rounded-lg border border-dashed border-ink-200 px-3.5 py-2 text-xs text-ink-400 transition-colors hover:border-amber-400 hover:text-amber-600">
               {uploading ? (
@@ -144,7 +161,9 @@ export default function Profile() {
               ) : (
                 <Camera size={14} />
               )}
+
               {hasPhoto ? "تغییر عکس" : "بارگذاری عکس"}
+
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
@@ -153,6 +172,7 @@ export default function Profile() {
                 disabled={uploading}
               />
             </label>
+
             {hasPhoto && (
               <button
                 type="button"
@@ -173,6 +193,7 @@ export default function Profile() {
             {error}
           </div>
         )}
+
         <form onSubmit={handleSave} className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Input
@@ -184,6 +205,7 @@ export default function Profile() {
               maxLength={50}
               required
             />
+
             <Input
               label="نام خانوادگی"
               value={form.last_name}
@@ -193,6 +215,7 @@ export default function Profile() {
               maxLength={50}
               required
             />
+
             <Input
               label="نام شرکت (اختیاری)"
               value={form.company_name}
@@ -201,8 +224,11 @@ export default function Profile() {
               }
               maxLength={100}
             />
+
             <Input
-              label="کد ملی (اختیاری)"
+              label="کد ملی"
+              required
+              hint="کد ملی ۱۰ رقمی شما؛ صفر ابتدایی حفظ می‌شود."
               value={form.national_id}
               onChange={(e) =>
                 setForm((f) => ({
@@ -216,6 +242,7 @@ export default function Profile() {
               dir="ltr"
               className="tabular text-left"
             />
+
             <Input
               label="شماره موبایل"
               value={profile?.phone_number || ""}

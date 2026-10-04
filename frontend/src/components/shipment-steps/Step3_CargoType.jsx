@@ -23,6 +23,7 @@ export default function Step3_CargoType({ data, onChange }) {
         label="نوع کالا"
         value={data.cargo_type || ""}
         options={cargoOptions}
+        stickyOptionValue="other"
         onChange={(value) => onChange("cargo_type", value)}
         placeholder="جستجو یا انتخاب نوع کالا..."
         required

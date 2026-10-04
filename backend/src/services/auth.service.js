@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 const { User, CargoOwner } = require("../models");
 const AppError = require("../utils/AppError");
 const otpService = require("./otp.service");
-
+const { isValidNationalId } = require("../utils/nationalId");
 // درخواست کد تأیید: اگر کاربر وجود نداشته باشد، رکورد اولیه با نقش صاحب کالا ساخته می‌شود
 async function requestOtp(phoneNumber) {
   let user = await User.findOne({ where: { phone_number: phoneNumber } });
@@ -63,14 +63,29 @@ async function verifyOtpAndAuthenticate({ phoneNumber, otpCode, profile }) {
       err.code = "PROFILE_REQUIRED";
       throw err;
     }
+    if (!isValidNationalId(profile?.national_id)) {
+      // کد ملی برای کاربر جدید اجباری است
+      const err = new AppError("کد ملی معتبر وارد کنید.", 422);
+      err.code = "NATIONAL_ID_REQUIRED";
+      throw err;
+    }
     cargoOwner = await CargoOwner.create({
       user_id: user.id,
       first_name: profile.first_name,
       last_name: profile.last_name,
       company_name: profile.company_name || null,
+      national_id: String(profile.national_id), // String تا صفر ابتدایی حفظ شود
     });
+  } else if (!isValidNationalId(cargoOwner.national_id)) {
+    // کاربر قدیمی بدون کد ملی معتبر: ورود مجدد با همان OTP همراه کد ملی
+    if (!isValidNationalId(profile?.national_id)) {
+      const err = new AppError("کد ملی معتبر وارد کنید.", 422);
+      err.code = "NATIONAL_ID_REQUIRED";
+      throw err;
+    }
+    cargoOwner.national_id = String(profile.national_id);
+    await cargoOwner.save();
   }
-
   // فقط الان که کل فرآیند (کد + پروفایل در صورت نیاز) با موفقیت تمام شده، کد پاک می‌شود
   user.otp_code = null;
   user.otp_expires_at = null;
@@ -121,16 +136,18 @@ async function getProfile(userId) {
 async function updateProfile(userId, data) {
   const { user, cargoOwner } = await loadProfile(userId);
 
-  [
-    "first_name",
-    "last_name",
-    "company_name",
-    "national_id",
-    "avatar_url",
-  ].forEach((key) => {
+  ["first_name", "last_name", "company_name", "avatar_url"].forEach((key) => {
     if (data[key] === undefined) return;
     cargoOwner[key] = data[key] === "" ? null : data[key];
   });
+
+  // کد ملی اجباری است: فقط مقدار معتبر قابل ذخیره/پاک نیست
+  if (data.national_id !== undefined) {
+    if (!isValidNationalId(data.national_id)) {
+      throw new AppError("کد ملی نامعتبر است.", 400);
+    }
+    cargoOwner.national_id = String(data.national_id);
+  }
 
   // نام و نام خانوادگی ستون‌های اجباری‌اند و نباید خالی شوند
   if (!cargoOwner.first_name || !cargoOwner.last_name) {

@@ -12,12 +12,19 @@ const requestOtp = asyncHandler(async (req, res) => {
 });
 
 const verifyOtp = asyncHandler(async (req, res) => {
-  const { phone_number, otp_code, first_name, last_name, company_name } =
-    req.body;
+  const {
+    phone_number,
+    otp_code,
+    first_name,
+    last_name,
+    company_name,
+    national_id,
+  } = req.body;
+
   const result = await authService.verifyOtpAndAuthenticate({
     phoneNumber: phone_number,
     otpCode: otp_code,
-    profile: { first_name, last_name, company_name },
+    profile: { first_name, last_name, company_name, national_id },
   });
   success(res, { message: "ورود با موفقیت انجام شد.", data: result });
 });

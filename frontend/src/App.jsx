@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -8,11 +8,15 @@ import ShipmentHistory from "./pages/shipment/ShipmentHistory";
 import ShipmentDetail from "./pages/shipment/ShipmentDetail";
 import Notifications from "./pages/notification/Notifications";
 import Complaints from "./pages/complaint/Complaints";
-import Profile from "./pages/profile/Profile";
+import Profile from "./pages/profile/profile";
 import OwnerLayout from "./layouts/OwnerLayout";
+import NationalIdRequired from "./pages/auth/NationalIdRequired";
+import { isValidNationalId } from "./utils/nationalId";
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-route-bg text-sm text-ink-300">
@@ -20,7 +24,18 @@ const ProtectedRoute = ({ children }) => {
       </div>
     );
   }
-  if (!user) return <Navigate to="/login" replace />;
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (
+    !isValidNationalId(user.national_id) &&
+    location.pathname !== "/complete-national-id"
+  ) {
+    return <Navigate to="/complete-national-id" replace />;
+  }
+
   return children;
 };
 
@@ -45,6 +60,15 @@ export default function App() {
         <Route path="/complaints" element={<Complaints />} />
         <Route path="/profile" element={<Profile />} />
       </Route>
+
+      <Route
+        path="/complete-national-id"
+        element={
+          <ProtectedRoute>
+            <NationalIdRequired />
+          </ProtectedRoute>
+        }
+      />
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
