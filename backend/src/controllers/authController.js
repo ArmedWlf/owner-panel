@@ -1,24 +1,35 @@
-const asyncHandler = require('../utils/asyncHandler');
-const { success } = require('../utils/apiResponse');
-const authService = require('../services/auth.service');
+const asyncHandler = require("../utils/asyncHandler");
+const { success } = require("../utils/apiResponse");
+const authService = require("../services/auth.service");
 
 const requestOtp = asyncHandler(async (req, res) => {
   const { phone_number } = req.body;
   const result = await authService.requestOtp(phone_number);
   success(res, {
-    message: 'کد تأیید برای شماره موبایل شما ارسال شد.',
+    message: "کد تأیید برای شماره موبایل شما ارسال شد.",
     data: { devOtpCode: result.devOtpCode },
   });
 });
 
 const verifyOtp = asyncHandler(async (req, res) => {
-  const { phone_number, otp_code, first_name, last_name, company_name } = req.body;
+  const { phone_number, otp_code, first_name, last_name, company_name } =
+    req.body;
   const result = await authService.verifyOtpAndAuthenticate({
     phoneNumber: phone_number,
     otpCode: otp_code,
     profile: { first_name, last_name, company_name },
   });
-  success(res, { message: 'ورود با موفقیت انجام شد.', data: result });
+  success(res, { message: "ورود با موفقیت انجام شد.", data: result });
 });
 
-module.exports = { requestOtp, verifyOtp };
+const getMe = asyncHandler(async (req, res) => {
+  const user = await authService.getProfile(req.user.id);
+  success(res, { data: user });
+});
+
+const updateMe = asyncHandler(async (req, res) => {
+  const user = await authService.updateProfile(req.user.id, req.body);
+  success(res, { message: "پروفایل با موفقیت ذخیره شد.", data: user });
+});
+
+module.exports = { requestOtp, verifyOtp, getMe, updateMe };

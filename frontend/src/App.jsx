@@ -1,14 +1,15 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './hooks/useAuth';
-import Login from './pages/auth/Login';
-import Register from './pages/auth/Register';
-import Dashboard from './pages/dashboard/Dashboard';
-import CreateShipment from './pages/shipment/CreateShipment';
-import ShipmentHistory from './pages/shipment/ShipmentHistory';
-import ShipmentDetail from './pages/shipment/ShipmentDetail';
-import Notifications from './pages/notification/Notifications';
-import Complaints from './pages/complaint/Complaints';
-import OwnerLayout from './layouts/OwnerLayout';
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "./hooks/useAuth";
+import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
+import Dashboard from "./pages/dashboard/Dashboard";
+import CreateShipment from "./pages/shipment/CreateShipment";
+import ShipmentHistory from "./pages/shipment/ShipmentHistory";
+import ShipmentDetail from "./pages/shipment/ShipmentDetail";
+import Notifications from "./pages/notification/Notifications";
+import Complaints from "./pages/complaint/Complaints";
+import Profile from "./pages/profile/Profile";
+import OwnerLayout from "./layouts/OwnerLayout";
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -42,6 +43,7 @@ export default function App() {
         <Route path="/shipments/:id" element={<ShipmentDetail />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/complaints" element={<Complaints />} />
+        <Route path="/profile" element={<Profile />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

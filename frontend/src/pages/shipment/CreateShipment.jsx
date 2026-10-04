@@ -84,10 +84,6 @@ const emptyFormData = {
   receiver_phone: "",
   proposed_price: "",
   trackingCode: "",
-  receiver_name: "",
-  receiver_phone: "",
-  receiver_national_id: "",
-  receiver_postal_code: "",
 };
 
 export default function CreateShipment() {

@@ -1,13 +1,16 @@
-const jwt = require('jsonwebtoken');
-const { User, CargoOwner } = require('../models');
-const AppError = require('../utils/AppError');
-const otpService = require('./otp.service');
+const jwt = require("jsonwebtoken");
+const { User, CargoOwner } = require("../models");
+const AppError = require("../utils/AppError");
+const otpService = require("./otp.service");
 
 // درخواست کد تأیید: اگر کاربر وجود نداشته باشد، رکورد اولیه با نقش صاحب کالا ساخته می‌شود
 async function requestOtp(phoneNumber) {
   let user = await User.findOne({ where: { phone_number: phoneNumber } });
   if (!user) {
-    user = await User.create({ phone_number: phoneNumber, role: 'cargo_owner' });
+    user = await User.create({
+      phone_number: phoneNumber,
+      role: "cargo_owner",
+    });
   }
 
   otpService.assertCanResend(user);
@@ -33,7 +36,7 @@ async function requestOtp(phoneNumber) {
 async function verifyOtpAndAuthenticate({ phoneNumber, otpCode, profile }) {
   const user = await User.findOne({ where: { phone_number: phoneNumber } });
   if (!user) {
-    throw new AppError('ابتدا درخواست کد تأیید بدهید.', 400);
+    throw new AppError("ابتدا درخواست کد تأیید بدهید.", 400);
   }
 
   try {
@@ -53,8 +56,11 @@ async function verifyOtpAndAuthenticate({ phoneNumber, otpCode, profile }) {
   if (!cargoOwner) {
     if (!profile?.first_name || !profile?.last_name) {
       // نیاز به تکمیل پروفایل - خطای شناخته‌شده که فرانت آن را تشخیص می‌دهد
-      const err = new AppError('برای تکمیل ثبت‌نام، نام و نام خانوادگی را وارد کنید.', 422);
-      err.code = 'PROFILE_REQUIRED';
+      const err = new AppError(
+        "برای تکمیل ثبت‌نام، نام و نام خانوادگی را وارد کنید.",
+        422,
+      );
+      err.code = "PROFILE_REQUIRED";
       throw err;
     }
     cargoOwner = await CargoOwner.create({
@@ -72,22 +78,72 @@ async function verifyOtpAndAuthenticate({ phoneNumber, otpCode, profile }) {
   user.is_phone_verified = true;
   await user.save();
 
-  const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, {
-    expiresIn: '7d',
-  });
-
-  return {
-    token,
-    user: {
-      id: user.id,
-      phone_number: user.phone_number,
-      role: user.role,
-      first_name: cargoOwner.first_name,
-      last_name: cargoOwner.last_name,
-      company_name: cargoOwner.company_name,
-      rating_avg: user.rating_avg,
+  const token = jwt.sign(
+    { id: user.id, role: user.role },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "7d",
     },
+  );
+
+  return { token, user: serializeUser(user, cargoOwner) };
+}
+
+// شکل یکسان اطلاعات کاربر برای ورود، دریافت پروفایل و ویرایش پروفایل
+function serializeUser(user, cargoOwner) {
+  return {
+    id: user.id,
+    phone_number: user.phone_number,
+    role: user.role,
+    first_name: cargoOwner.first_name,
+    last_name: cargoOwner.last_name,
+    company_name: cargoOwner.company_name,
+    national_id: cargoOwner.national_id,
+    avatar_url: cargoOwner.avatar_url,
   };
 }
 
-module.exports = { requestOtp, verifyOtpAndAuthenticate };
+async function loadProfile(userId) {
+  const user = await User.findByPk(userId);
+  const cargoOwner = await CargoOwner.findOne({ where: { user_id: userId } });
+  if (!user || !cargoOwner) {
+    throw new AppError("پروفایل کاربر پیدا نشد.", 404);
+  }
+  return { user, cargoOwner };
+}
+
+async function getProfile(userId) {
+  const { user, cargoOwner } = await loadProfile(userId);
+  return serializeUser(user, cargoOwner);
+}
+
+// فقط فیلدهایی که در درخواست آمده‌اند به‌روز می‌شوند؛ رشته‌ی خالی در فیلدهای اختیاری یعنی پاک کردن مقدار
+async function updateProfile(userId, data) {
+  const { user, cargoOwner } = await loadProfile(userId);
+
+  [
+    "first_name",
+    "last_name",
+    "company_name",
+    "national_id",
+    "avatar_url",
+  ].forEach((key) => {
+    if (data[key] === undefined) return;
+    cargoOwner[key] = data[key] === "" ? null : data[key];
+  });
+
+  // نام و نام خانوادگی ستون‌های اجباری‌اند و نباید خالی شوند
+  if (!cargoOwner.first_name || !cargoOwner.last_name) {
+    throw new AppError("نام و نام خانوادگی نمی‌تواند خالی باشد.", 400);
+  }
+
+  await cargoOwner.save();
+  return serializeUser(user, cargoOwner);
+}
+
+module.exports = {
+  requestOtp,
+  verifyOtpAndAuthenticate,
+  getProfile,
+  updateProfile,
+};

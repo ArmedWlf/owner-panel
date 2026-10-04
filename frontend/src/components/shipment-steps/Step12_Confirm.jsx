@@ -24,12 +24,47 @@ function formatWeightTon(value) {
     : `${formattedInteger}.${fractionalPart}`;
 }
 
-const MIN_PRICE = 10000;
+function formatPriceInput(value) {
+  if (value === "" || value === null || value === undefined) return "";
+
+  const [integerPart, decimalPart] = String(value).split(".");
+  const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+  return decimalPart === undefined
+    ? formattedInteger
+    : `${formattedInteger}.${decimalPart}`;
+}
 
 export default function Step12_Confirm({ data, onChange, onSubmit }) {
   const [loading, setLoading] = useState(false);
 
-  const priceInvalid = !data.proposed_price || data.proposed_price < MIN_PRICE;
+  const priceInvalid = !data.proposed_price || data.proposed_price <= 0;
+  const handlePriceChange = (e) => {
+    const input = e.currentTarget;
+    const cursor = input.selectionStart ?? input.value.length;
+    const digitsBeforeCursor = (
+      input.value.slice(0, cursor).match(/[0-9۰-۹٠-٩]/g) || []
+    ).length;
+
+    // مقدار خام و بدون comma وارد state می‌شود
+    const rawValue = parseNumberInput(input.value);
+    onChange("proposed_price", rawValue);
+
+    const formattedValue = formatPriceInput(rawValue);
+
+    // مکان‌نما را نسبت به تعداد رقم‌های قبل از آن حفظ می‌کنیم
+    requestAnimationFrame(() => {
+      let position = 0;
+      let digits = 0;
+
+      while (position < formattedValue.length && digits < digitsBeforeCursor) {
+        if (/[0-9]/.test(formattedValue[position])) digits += 1;
+        position += 1;
+      }
+
+      input.setSelectionRange(position, position);
+    });
+  };
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -53,16 +88,9 @@ export default function Step12_Confirm({ data, onChange, onSubmit }) {
         type="text"
         inputMode="decimal"
         className="tabular"
-        value={data.proposed_price ?? ""}
-        onChange={(e) =>
-          onChange("proposed_price", parseNumberInput(e.target.value))
-        }
+        value={formatPriceInput(data.proposed_price)}
+        onChange={handlePriceChange}
         placeholder="مثلاً 3500000"
-        error={
-          priceInvalid && data.proposed_price !== ""
-            ? `مبلغ باید حداقل ${MIN_PRICE.toLocaleString("fa-IR")} تومان باشد.`
-            : undefined
-        }
         required
       />
 

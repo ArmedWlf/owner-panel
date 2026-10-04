@@ -1,5 +1,5 @@
-import { createContext, useState, useEffect } from 'react';
-import { requestOtp, verifyOtp } from '../api/auth.api';
+import { createContext, useState, useEffect } from "react";
+import { requestOtp, verifyOtp, getProfile } from "../api/auth.api";
 
 export const AuthContext = createContext();
 
@@ -8,10 +8,22 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
+    const savedUser = localStorage.getItem("user");
+    const token = localStorage.getItem("token");
     if (savedUser && token) {
       setUser(JSON.parse(savedUser));
+      // نسخه‌ی ذخیره‌شده در مرورگر ممکن است قدیمی باشد؛ اطلاعات واقعی پروفایل از Backend خوانده می‌شود
+      getProfile()
+        .then((fresh) => {
+          if (!localStorage.getItem("token")) return; // اگر در همین فاصله خارج شده، کاربر دوباره ساخته نشود
+          setUser((prev) => {
+            if (!prev) return prev;
+            const next = { ...prev, ...fresh };
+            localStorage.setItem("user", JSON.stringify(next));
+            return next;
+          });
+        })
+        .catch(() => {});
     }
     setLoading(false);
   }, []);
@@ -23,20 +35,31 @@ export const AuthProvider = ({ children }) => {
   // profile فقط برای کاربر جدید لازم است؛ برای کاربر قدیمی نادیده گرفته می‌شود
   const confirmOtp = async (phoneNumber, otpCode, profile) => {
     const data = await verifyOtp({ phoneNumber, otpCode, profile });
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(data.user));
     setUser(data.user);
     return data;
   };
 
+  // به‌روزرسانی اطلاعات کاربر بعد از ویرایش پروفایل (نام در منو هم همین‌جا عوض می‌شود)
+  const updateUser = (partial) => {
+    setUser((prev) => {
+      const next = { ...prev, ...partial };
+      localStorage.setItem("user", JSON.stringify(next));
+      return next;
+    });
+  };
+
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, sendOtp, confirmOtp, logout, loading }}>
+    <AuthContext.Provider
+      value={{ user, sendOtp, confirmOtp, updateUser, logout, loading }}
+    >
       {children}
     </AuthContext.Provider>
   );
