@@ -10,8 +10,19 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
     const token = localStorage.getItem("token");
-    if (savedUser && token) {
-      setUser(JSON.parse(savedUser));
+
+    // محافظت در برابر داده‌ی خراب localStorage (مثلاً مقدار "undefined" یا JSON نامعتبر)
+    const isCorrupt = (value) => !value || value === "undefined";
+    if (isCorrupt(savedUser) || isCorrupt(token)) {
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+    } else {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch {
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+      }
       // نسخه‌ی ذخیره‌شده در مرورگر ممکن است قدیمی باشد؛ اطلاعات واقعی پروفایل از Backend خوانده می‌شود
       getProfile()
         .then((fresh) => {
@@ -35,9 +46,12 @@ export const AuthProvider = ({ children }) => {
   // profile فقط برای کاربر جدید لازم است؛ برای کاربر قدیمی نادیده گرفته می‌شود
   const confirmOtp = async (phoneNumber, otpCode, profile) => {
     const data = await verifyOtp({ phoneNumber, otpCode, profile });
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
-    setUser(data.user);
+    // اگر پاسخ ناقص بود، توکن/کاربر خراب (مثل "undefined") ذخیره نشود
+    if (data?.token && data?.user) {
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      setUser(data.user);
+    }
     return data;
   };
 
