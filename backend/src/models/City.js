@@ -6,7 +6,9 @@ const City = sequelize.define(
   "City",
   {
     id: {
-      type: DataTypes.INTEGER,
+      // BIGINT: شناسه‌های مرجع شهرهای ایران در iranCities.json بزرگ‌تر از محدوده‌ی INT هستند
+      // (مثلاً 1180001001517) و با INT به‌صورت خاموش truncate می‌شدند و باعث حذف نامرئی شهرها می‌شدند.
+      type: DataTypes.BIGINT,
       autoIncrement: true,
       primaryKey: true,
     },

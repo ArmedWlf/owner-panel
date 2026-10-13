@@ -33,14 +33,14 @@ const Shipment = sequelize.define(
     },
 
     // مرحله ۱: مبدأ
-    origin_city_id: { type: DataTypes.INTEGER, allowNull: false },
+    origin_city_id: { type: DataTypes.BIGINT, allowNull: false },
     origin_zone_id: { type: DataTypes.INTEGER, allowNull: true },
     origin_address: { type: DataTypes.TEXT, allowNull: false }, // تا تأیید راننده مخفی می‌ماند
     origin_lat: { type: DataTypes.DECIMAL(10, 8), allowNull: false },
     origin_lng: { type: DataTypes.DECIMAL(11, 8), allowNull: false },
 
     // مرحله ۲: مقصد
-    dest_city_id: { type: DataTypes.INTEGER, allowNull: false },
+    dest_city_id: { type: DataTypes.BIGINT, allowNull: false },
     dest_zone_id: { type: DataTypes.INTEGER, allowNull: true },
     dest_address: { type: DataTypes.TEXT, allowNull: true }, // فقط بعد از صدور بارنامه نمایش داده می‌شود
     dest_lat: { type: DataTypes.DECIMAL(10, 8), allowNull: true },
